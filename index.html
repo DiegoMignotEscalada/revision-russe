@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Révision de russe — bloc 1</title>
+<meta name="theme-color" content="#0e0e12">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="./icones/icone-192.png">
+<link rel="apple-touch-icon" href="./icones/icone-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e0e12; --surface:#16161e; --card:#1e1e2a; --border:#2a2a3a;
+  --gold:#c9a84c; --gold-light:#e8c97a; --red:#e05c5c; --green:#5cb87a;
+  --blue:#5c9be0; --purple:#9b7fe0;
+  --text:#e8e4d9; --text-dim:#8a8578; --text-muted:#4a4840;
+  --serif:'Spectral',Georgia,'Times New Roman',serif;
+  --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--serif);
+  font-weight:300; font-size:17px; line-height:1.55;
+  -webkit-text-size-adjust:100%;
+}
+#app{max-width:480px;margin:0 auto;padding:14px 14px 82px}
+h1,h2,h3{font-weight:600;line-height:1.25;margin:0}
+h1{font-size:19px;letter-spacing:.01em}
+h2{font-size:15px;margin:22px 0 8px}
+h3{font-size:14px;margin:0 0 6px}
+p{margin:0 0 10px}
+a{color:var(--blue)}
+.mono{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.dim{color:var(--text-dim)}
+.muted{color:var(--text-muted)}
+hr{border:0;border-top:1px solid var(--border);margin:18px 0}
+
+/* --- en-tête --- */
+header{display:flex;align-items:baseline;justify-content:space-between;
+  padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:14px}
+header .mono{color:var(--gold)}
+
+/* --- cartes --- */
+.carte{background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px;margin-bottom:12px}
+.carte.entree{animation:monte .18s ease-out}
+@keyframes monte{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.bloc{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:12px;margin-bottom:12px}
+
+/* --- contrôles --- */
+button{font-family:var(--serif);font-size:16px;color:var(--text);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:10px 14px;cursor:pointer}
+button:hover{border-color:var(--text-muted)}
+button:focus-visible,input:focus-visible,a:focus-visible{
+  outline:2px solid var(--gold);outline-offset:2px}
+button.primaire{background:var(--gold);border-color:var(--gold);color:#17150c;
+  font-weight:600;width:100%;padding:13px}
+button.primaire:hover{background:var(--gold-light);border-color:var(--gold-light)}
+button.plein{width:100%}
+button:disabled{opacity:.4;cursor:default}
+button.petit{font-size:13px;padding:6px 10px}
+input[type=text]{width:100%;font-family:var(--serif);font-size:22px;
+  background:var(--bg);color:var(--text);border:1px solid var(--border);
+  border-radius:8px;padding:12px}
+input[type=range]{width:100%;accent-color:var(--gold)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--mono);font-size:11px;letter-spacing:.05em;
+  text-transform:uppercase;padding:7px 11px;border-radius:999px;
+  border:1px solid var(--border);background:transparent;color:var(--text-dim)}
+.chip[aria-pressed=true]{border-color:var(--gold);color:var(--gold);
+  background:rgba(201,168,76,.10)}
+.ligne{display:flex;gap:8px;align-items:center}
+.ligne>*{flex:1}
+label.bascule{display:flex;align-items:center;gap:9px;cursor:pointer;
+  font-size:15px;color:var(--text-dim)}
+label.bascule input{accent-color:var(--gold);width:18px;height:18px}
+
+/* --- exercice --- */
+.consigne{font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.invite{font-size:20px;margin-bottom:4px}
+.invite .ru{font-size:27px}
+.ru{font-family:var(--serif)}
+.ru.nom{color:var(--gold-light)}
+.ru.adjectif{color:var(--purple)}
+.question{font-size:14px;color:var(--text-dim);margin-bottom:12px}
+.phrase{font-size:21px;line-height:1.7;margin-bottom:6px}
+.trou{display:inline-block;min-width:74px;border-bottom:2px solid var(--gold);
+  color:var(--text-muted);text-align:center}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.badge{font-family:var(--mono);font-size:10px;letter-spacing:.05em;
+  text-transform:uppercase;padding:3px 7px;border-radius:4px;
+  border:1px solid var(--border);color:var(--text-dim)}
+.badge.irr{border-color:var(--red);color:var(--red)}
+.badge.valider{border-color:var(--blue);color:var(--blue)}
+
+/* --- retour --- */
+.verdict{font-family:var(--mono);font-size:12px;letter-spacing:.08em;
+  text-transform:uppercase;margin-bottom:8px}
+.verdict.ok{color:var(--green)}
+.verdict.ko{color:var(--red)}
+.reponse{font-size:27px;margin-bottom:10px}
+.diff{font-family:var(--mono);font-size:16px;letter-spacing:.02em;
+  background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  padding:9px 11px;margin-bottom:12px;overflow-x:auto;white-space:nowrap}
+.diff .lig{display:block}
+.diff .et{font-size:10px;color:var(--text-muted);
+  display:inline-block;width:38px;text-transform:uppercase}
+.diff s{text-decoration:none;background:rgba(224,92,92,.22);
+  color:var(--red);border-radius:2px}
+.diff b{background:rgba(92,184,122,.18);color:var(--green);
+  border-radius:2px;font-weight:400}
+
+/* --- grille de paradigme : élément central --- */
+table.para{width:100%;border-collapse:collapse;font-size:16px;margin-bottom:4px}
+table.para th{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--text-muted);font-weight:400;
+  text-align:left;padding:4px 6px;border-bottom:1px solid var(--border)}
+table.para td{padding:5px 6px;border-bottom:1px solid rgba(42,42,58,.5)}
+table.para td.cas{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--text-muted);white-space:nowrap}
+table.para td.vise{background:rgba(201,168,76,.13);
+  box-shadow:inset 0 0 0 1px var(--gold);color:var(--gold-light);border-radius:3px}
+table.para tr.absente td{color:var(--text-muted)}
+
+.regle{font-size:15.5px;border-left:2px solid var(--blue);padding-left:11px;
+  color:var(--text);margin-bottom:10px}
+.regle .titre{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--blue);display:block;margin-bottom:4px}
+.exemples{font-size:16px;color:var(--text-dim);margin-top:6px}
+
+/* --- pastilles de session --- */
+.pastilles{display:flex;gap:4px;align-items:center}
+.pastille{width:8px;height:8px;border-radius:50%;background:var(--text-muted)}
+.pastille.ok{background:var(--green)}
+.pastille.ko{background:var(--red)}
+
+/* --- statistiques --- */
+.stat{display:flex;align-items:center;gap:9px;margin-bottom:7px;font-size:15px}
+.stat .lib{flex:1;min-width:0}
+.stat .val{font-family:var(--mono);font-size:12px;white-space:nowrap}
+.jauge{height:5px;border-radius:3px;background:var(--border);
+  width:74px;flex:none;overflow:hidden}
+.jauge i{display:block;height:100%;background:var(--green)}
+.stat.grise{color:var(--text-muted)}
+.stat.grise .val{color:var(--text-muted)}
+.n2{margin-left:12px;font-size:14px}
+
+/* --- tableaux de règles --- */
+table.reg{width:100%;border-collapse:collapse;font-size:15px;margin:8px 0 4px}
+table.reg td,table.reg th{padding:5px 7px;border-bottom:1px solid var(--border);
+  text-align:left;vertical-align:top}
+table.reg th{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--text-muted);font-weight:400}
+details{margin-bottom:8px;border:1px solid var(--border);border-radius:var(--r);
+  background:var(--surface)}
+details>summary{padding:11px 13px;cursor:pointer;font-weight:600;font-size:16px}
+details>summary::marker{color:var(--gold)}
+details .corps{padding:0 13px 13px}
+
+/* --- barre d'onglets --- */
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);
+  border-top:1px solid var(--border);display:flex;
+  padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:transparent;border-radius:0;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--text-muted);padding:12px 2px 13px}
+nav button[aria-current=page]{color:var(--gold);
+  box-shadow:inset 0 2px 0 var(--gold)}
+.vide{color:var(--text-dim);font-size:15.5px}
+.alerte{border:1px solid var(--red);border-left-width:3px;border-radius:var(--r);
+  background:rgba(224,92,92,.08);color:var(--text);padding:11px 13px;
+  font-size:15px;margin-bottom:12px}
+textarea{width:100%;min-height:110px;font-family:var(--mono);font-size:11px;
+  background:var(--bg);color:var(--text-dim);border:1px solid var(--border);
+  border-radius:8px;padding:9px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Révision de russe</h1>
+    <span class="mono" id="entete-echus">—</span>
+  </header>
+  <div id="bandeau" role="status"></div>
+  <main id="vue" aria-live="polite"></main>
+</div>
+<nav id="onglets" aria-label="Sections">
+  <button data-onglet="pratiquer">Pratiquer</button>
+  <button data-onglet="erreurs">Erreurs</button>
+  <button data-onglet="stats">Stats</button>
+  <button data-onglet="regles">Règles</button>
+  <button data-onglet="installer">Installer</button>
+</nav>
+<script src="./data/grammaire.js"></script>
+<script src="./data/lexique.js"></script>
+<script src="./data/phrases.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

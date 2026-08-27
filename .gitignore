@@ -1,0 +1,10 @@
+*.pdf
+Cours_Masha_Russe.pdf
+.DS_Store
+node_modules/
+__pycache__/
+*.pyc
+ocr/
+support-ocr.txt
+node_modules
+RAPPORT-PERIMETRE.md

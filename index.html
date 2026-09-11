@@ -5,9 +5,44 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Révision de russe — bloc 1</title>
 <meta name="theme-color" content="#0e0e12">
+<!-- Politique de sécurité du contenu. GitHub Pages n'envoie aucun en-tête HTTP
+     configurable : elle est donc déclarée ici, ce qui couvre l'essentiel.
+     Effet : même si du contenu malveillant parvenait à entrer dans la page, il
+     ne pourrait ni exécuter de script en ligne, ni charger un script distant,
+     ni envoyer quoi que ce soit ailleurs que sur cette origine.
+     connect-src est à 'self' et non 'none' : cela suffit à empêcher toute
+     exfiltration vers un tiers, sans risquer de gêner le service worker.
+     'unsafe-inline' n'est autorisé que pour les styles, car la feuille de
+     style et quelques attributs style= sont en ligne ; les scripts, eux, sont
+     tous des fichiers externes et n'ont besoin d'aucune dérogation. -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src 'self' https://fonts.gstatic.com;
+  img-src 'self' data:;
+  connect-src 'self';
+  object-src 'none';
+  frame-src 'none';
+  base-uri 'none';
+  form-action 'none'">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="./icones/icone-192.png">
 <link rel="apple-touch-icon" href="./icones/icone-192.png">
+<!-- ============================ POLICES DISTANTES ============================
+     Les TROIS lignes ci-dessous sont les SEULES requêtes de l'application vers
+     un tiers. Elles chargent Spectral et JetBrains Mono depuis Google Fonts.
+     Ce que Google voit alors : l'adresse IP de l'appareil, son navigateur, et
+     la page qui a demandé la police — au premier chargement seulement, puisque
+     le service worker met ensuite tout en cache.
+
+     POUR SUPPRIMER TOUTE REQUÊTE VERS UN TIERS : supprimez les trois lignes.
+     L'application continue de fonctionner à l'identique ; la typographie
+     retombe sur les polices du système, déclarées en repli dans --serif et
+     --mono. C'est le seul effet. Sur un appareil professionnel, c'est le
+     réglage à privilégier si votre politique interne restreint les appels
+     sortants.
+     ========================================================================= -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -16,7 +51,11 @@
   --bg:#0e0e12; --surface:#16161e; --card:#1e1e2a; --border:#2a2a3a;
   --gold:#c9a84c; --gold-light:#e8c97a; --red:#e05c5c; --green:#5cb87a;
   --blue:#5c9be0; --purple:#9b7fe0;
-  --text:#e8e4d9; --text-dim:#8a8578; --text-muted:#4a4840;
+  /* Contrastes mesurés sur la carte (#1e1e2a), seuil AA de 4,5:1 pour du
+     petit texte. --text-dim était à 4,48 et --text-muted à 1,80 : le second
+     sert aux étiquettes de cas de la grille, à 9,5 px, c'est-à-dire à
+     l'information qui dit quel cas on regarde. Éclaircis à teinte constante. */
+  --text:#e8e4d9; --text-dim:#8d887a; --text-muted:#8d897a;
   --serif:'Spectral',Georgia,'Times New Roman',serif;
   --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
   --r:10px;
@@ -123,9 +162,13 @@ table.para{width:100%;border-collapse:collapse;font-size:16px;margin-bottom:4px}
 table.para th{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;
   text-transform:uppercase;color:var(--text-muted);font-weight:400;
   text-align:left;padding:4px 6px;border-bottom:1px solid var(--border)}
-table.para td{padding:5px 6px;border-bottom:1px solid rgba(42,42,58,.5)}
+table.para td{padding:5px 6px;border-bottom:1px solid rgba(42,42,58,.5);
+  overflow-wrap:anywhere}
 table.para td.cas{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;
   text-transform:uppercase;color:var(--text-muted);white-space:nowrap}
+/* la grille d'adjectif partage la largeur en quatre : les formes longues
+   comme внима́тельного doivent pouvoir se couper plutôt que déborder */
+table.para.adj td{font-size:13px;padding:5px 3px}
 table.para td.vise{background:rgba(201,168,76,.13);
   box-shadow:inset 0 0 0 1px var(--gold);color:var(--gold-light);border-radius:3px}
 table.para tr.absente td{color:var(--text-muted)}
@@ -203,6 +246,7 @@ textarea{width:100%;min-height:110px;font-family:var(--mono);font-size:11px;
 <script src="./data/grammaire.js"></script>
 <script src="./data/lexique.js"></script>
 <script src="./data/phrases.js"></script>
+<script src="./data/bloc2.js"></script>
 <script src="./app.js"></script>
 </body>
 </html>

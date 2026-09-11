@@ -3,7 +3,7 @@
    Pour forcer le rechargement des fichiers après un déploiement, incrémenter
    CACHE_VERSION. C'est le seul geste nécessaire. */
 
-const CACHE_VERSION = 'revision-russe-v1';
+const CACHE_VERSION = 'revision-russe-v8';
 
 const FICHIERS = [
   './',
@@ -13,9 +13,13 @@ const FICHIERS = [
   './data/grammaire.js',
   './data/lexique.js',
   './data/phrases.js',
+  './data/bloc2.js',
   './icones/icone-192.png',
   './icones/icone-512.png',
   './icones/icone-maskable-512.png',
+  /* Seule entrée distante de la liste. Si vous retirez les polices de
+     index.html pour supprimer toute requête vers un tiers, retirez aussi
+     cette ligne : elle échouerait sans conséquence, mais autant être net. */
   'https://fonts.googleapis.com/css2?family=Spectral:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap'
 ];
 

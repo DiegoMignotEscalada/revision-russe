@@ -4,19 +4,75 @@
 (function () {
 'use strict';
 
+/* ------------------------------------------------ contrôle de démarrage ----
+   Si un fichier de données n'a pas été servi, la variable globale
+   correspondante est absente et le moteur s'arrêtait à sa première ligne
+   utile, laissant une page à moitié vide sans explication. On vérifie donc
+   d'abord, et on affiche ce qui manque. */
+/* ech() est défini plus bas, après les données ; ce contrôle tourne avant.
+   On duplique donc l'échappement, volontairement, plutôt que de déplacer le
+   contrôle après le chargement des données qu'il est censé vérifier. */
+function echSimple(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+(function verifierDonnees() {
+  var requis = [
+    { nom: 'GRAMMAIRE', fichier: 'data/grammaire.js' },
+    { nom: 'LEXIQUE', fichier: 'data/lexique.js' },
+    { nom: 'PHRASES', fichier: 'data/phrases.js' }
+  ];
+  var manquants = requis.filter(function (r) {
+    return typeof window[r.nom] === 'undefined' || !window[r.nom];
+  });
+  if (!manquants.length) return;
+  var vue = document.getElementById('vue');
+  if (!vue) return;
+  vue.innerHTML =
+    '<div class="carte"><h3 style="color:#e05c5c">Fichiers de données ' +
+    'introuvables</h3><p>L\u2019application ne peut pas démarrer : ' +
+    manquants.length + ' fichier' + (manquants.length > 1 ? 's' : '') +
+    (manquants.length > 1 ? ' n\u2019ont' : ' n\u2019a') +
+    ' pas été chargé' + (manquants.length > 1 ? 's' : '') +
+    '.</p><ul style="padding-left:20px">' +
+    manquants.map(function (r) {
+      return '<li><code>' + echSimple(r.fichier) + '</code></li>';
+    }).join('') +
+    '</ul><p>Vérifiez que le dossier <code>data</code> est bien présent à la ' +
+    'racine du site, avec ses trois fichiers, et que les noms sont en ' +
+    'minuscules. Ouvrez l\u2019adresse du fichier directement dans le ' +
+    'navigateur : elle doit afficher du code, non « 404 ».</p>' +
+    /* location.href est une entrée contrôlable par celui qui fabrique le
+       lien : elle ne va jamais dans du HTML sans échappement, même si les
+       navigateurs encodent déjà la plupart des caractères dangereux dans le
+       chemin. On échappe, et on n'utilise que le chemin, jamais la requête
+       ni le fragment. */
+    '<p class="dim">Adresse attendue : <code>' +
+    echSimple(location.pathname.replace(/[^/]*$/, '')) +
+    echSimple(manquants[0].fichier) + '</code></p></div>';
+  throw new Error('Données absentes : ' +
+    manquants.map(function (r) { return r.fichier; }).join(', '));
+})();
+
 var CLE = 'revision-russe-v1';
 var INTERVALLE_MAX = 365 * 5;   /* borne de sûreté, cinq ans */
 var ACC = '\u0301';
 var CAS = ['nom', 'gen', 'dat', 'acc', 'instr', 'prep'];
+/* Thèmes de niveau 1 des statistiques et des filtres : les six cas du bloc 1,
+   puis les familles du bloc 2. */
+var THEMES = CAS.concat(['verbe', 'pronom', 'comparaison', 'negation',
+                         'numeral']);
 var NOM_CAS = {
   nom: 'Nominatif', gen: 'Génitif', dat: 'Datif',
-  acc: 'Accusatif', instr: 'Instrumental', prep: 'Prépositionnel'
+  acc: 'Accusatif', instr: 'Instrumental', prep: 'Prépositionnel',
+  verbe: 'Verbes', pronom: 'Pronoms', comparaison: 'Comparaison',
+  negation: 'Négation', numeral: 'Numéraux'
 };
 var ABREV = ['nom', 'gén', 'dat', 'acc', 'instr', 'prép'];
 /* Ordre d'introduction imposé par SPEC §8.1 : prépositionnel, accusatif,
    datif, instrumental, génitif singulier, pluriels du nominatif, génitif
    pluriel en dernier. */
-var RANG = { prep: 0, acc: 10, dat: 20, instr: 30, gen: 40, nom: 45 };
 var CAT_NOM = {
   lieux: 'Lieux', maison: 'Maison', nourriture: 'Nourriture',
   vetements: 'Vêtements', sport: 'Sport', personnes: 'Personnes',
@@ -35,10 +91,23 @@ var SERIES_ADJ = [
 
 /* ------------------------------------------------------------ index de base */
 
+/* Le bloc 2 est un fichier de données séparé, chargé après les autres. Son
+   absence ne doit pas empêcher l'application de tourner : un dépôt qui n'a pas
+   encore reçu data/bloc2.js reste utilisable sur le bloc 1 seul. */
+var LEX = LEXIQUE, PHR = PHRASES, GRAM = GRAMMAIRE;
+if (typeof BLOC2 !== 'undefined' && BLOC2) {
+  LEX = LEXIQUE.concat(BLOC2.items || []);
+  PHR = PHRASES.concat(BLOC2.phrases || []);
+  GRAM = {
+    sous: GRAMMAIRE.sous.concat(BLOC2.sous || []),
+    points: GRAMMAIRE.points.concat(BLOC2.points || [])
+  };
+}
+
 var SOUS = {}, POINTS = {}, ITEMS = {}, PAR_LEMME = {}, PAR_FORME = {};
-GRAMMAIRE.sous.forEach(function (s) { SOUS[s.id] = s; });
-GRAMMAIRE.points.forEach(function (p) { POINTS[p.id] = p; });
-LEXIQUE.forEach(function (it) {
+GRAM.sous.forEach(function (s) { SOUS[s.id] = s; });
+GRAM.points.forEach(function (p) { POINTS[p.id] = p; });
+LEX.forEach(function (it) {
   ITEMS[it.id] = it;
   var cle = sansAcc(it.lemme).toLowerCase();
   if (!PAR_LEMME[cle]) PAR_LEMME[cle] = it;
@@ -46,13 +115,17 @@ LEXIQUE.forEach(function (it) {
      dont l'indice est une forme fléchie (шко́ле, о́кна, друзья́), et à accepter
      en reconnaissance les gloses des homographes (лет = год et ле́то,
      о по́ле = пол et по́ле). */
-  var series = it.type === 'adjectif' ? ['m', 'f', 'n', 'pl'] : ['sg', 'pl'];
-  series.forEach(function (k) {
-    (it[k] || []).forEach(function (f) {
-      var c = sansAcc(f).toLowerCase();
-      if (!PAR_FORME[c]) PAR_FORME[c] = [];
-      if (PAR_FORME[c].indexOf(it) < 0) PAR_FORME[c].push(it);
-    });
+  var formes = [];
+  if (it.type === 'flexion') {
+    (it.cellules || []).forEach(function (c) { formes.push(c.forme); });
+  } else {
+    (it.type === 'adjectif' ? ['m', 'f', 'n', 'pl'] : ['sg', 'pl'])
+      .forEach(function (k) { formes = formes.concat(it[k] || []); });
+  }
+  formes.forEach(function (f) {
+    var c = sansAcc(f).toLowerCase();
+    if (!PAR_FORME[c]) PAR_FORME[c] = [];
+    if (PAR_FORME[c].indexOf(it) < 0) PAR_FORME[c].push(it);
   });
   if (it.loc2) {
     var cl = sansAcc(it.loc2.forme).toLowerCase().split(' ').pop();
@@ -60,31 +133,132 @@ LEXIQUE.forEach(function (it) {
     PAR_FORME[cl].push(it);
   }
 });
-PHRASES.forEach(function (p) { ITEMS[p.id] = p; });
+PHR.forEach(function (p) { ITEMS[p.id] = p; });
 
 var CARTES = [];
-LEXIQUE.forEach(function (it) {
+LEX.forEach(function (it) {
   (it.sousCategories || []).forEach(function (s) {
     CARTES.push({ id: it.id + '|' + s, itemId: it.id, sous: s, kind: it.type });
   });
 });
-PHRASES.forEach(function (p) {
+PHR.forEach(function (p) {
   CARTES.push({ id: p.id, itemId: p.id, sous: p.sousCategorie, kind: 'phrase' });
 });
 var PAR_ID = {};
 CARTES.forEach(function (c) { PAR_ID[c.id] = c; });
 
+/* ------------------------------------------- ordre d'introduction ----------
+   SPEC §8.1 impose une progression par cas : prépositionnel, accusatif, datif,
+   instrumental, génitif singulier, pluriels, génitif pluriel. Appliqué à la
+   lettre, cela veut dire épuiser les 366 cartes de prépositionnel avant la
+   première d'accusatif, soit plus de six mois d'un seul cas. Ce n'est pas ce
+   que la consigne voulait dire.
+
+   L'ordre retenu conserve les blocs par cas, qui sont pédagogiquement utiles,
+   mais les borne : TAILLE_BLOC cartes d'un cas, puis on passe au suivant, et
+   l'on revient au premier pour une deuxième vague. À huit nouvelles cartes par
+   séance, cela fait cinq séances par bloc et les six cas sont abordés en une
+   trentaine de séances au lieu de cent soixante.
+
+   À l'intérieur d'un cas, l'ordre n'est plus alphabétique. Il l'était, et cela
+   donnait seize adjectifs d'affilée comme toutes premières cartes de
+   l'application, avant le premier nom. L'ordre est maintenant : les noms dans
+   l'ordre thématique du fichier de données (lieux, maison, nourriture…), puis
+   les phrases en contexte, puis les adjectifs, qui présupposent les noms. */
+/* Sept sujets d'introduction, dans l'ordre canonique. Le point de départ est
+   réglable : l'utilisateur peut vouloir reporter un sujet déjà beaucoup
+   travaillé. La liste est alors tournée à partir du sujet choisi, les autres
+   suivant dans le même ordre relatif. */
+var SUJETS = ['prep', 'acc', 'dat', 'instr', 'gen', 'nom', 'genpl',
+              'verbe', 'pronom', 'divers'];
+var NOM_SUJET = {
+  prep: 'Prépositionnel', acc: 'Accusatif', dat: 'Datif',
+  instr: 'Instrumental', gen: 'Génitif singulier', nom: 'Pluriels du nominatif',
+  genpl: 'Génitif pluriel', verbe: 'Verbes', pronom: 'Pronoms',
+  divers: 'Comparaison, négation, nombres'
+};
+var PRIORITE_TYPE = { nom: 0, phrase: 1, adjectif: 2 };
+var ORDRE_FICHIER = {};
+LEX.forEach(function (it, i) { ORDRE_FICHIER[it.id] = i; });
+PHR.forEach(function (p, i) { ORDRE_FICHIER[p.id] = i; });
+
+function sujetDe(c) {
+  var s = SOUS[c.sous];
+  if (!s) return 'nom';
+  if (s.cas === 'comparaison' || s.cas === 'negation' || s.cas === 'numeral') {
+    return 'divers';
+  }
+  if (s.cas === 'verbe' || s.cas === 'pronom') return s.cas;
+  if (s.id.indexOf('genpl') === 0 || s.id === 'gen_pl_quantite') return 'genpl';
+  if (s.cas === 'gen' && s.nombre === 'pl') return 'genpl';
+  return s.cas;
+}
+CARTES.forEach(function (c) { c.sujet = sujetDe(c); });
+
+function ordreSujets(depart) {
+  var i = SUJETS.indexOf(depart);
+  if (i < 0) i = 0;
+  return SUJETS.slice(i).concat(SUJETS.slice(0, i));
+}
+
+/* Recalculé au démarrage et à chaque changement de réglage : la position d'une
+   carte dans la file d'introduction dépend du sujet de départ et de la taille
+   de bloc choisis. */
+function preparerIntroduction(depart, bloc) {
+  var ordre = ordreSujets(depart);
+  var parSujet = {};
+  CARTES.forEach(function (c) {
+    (parSujet[c.sujet] = parSujet[c.sujet] || []).push(c);
+  });
+  ordre.forEach(function (sujet, rang) {
+    var liste = parSujet[sujet] || [];
+    liste.sort(function (a, b) {
+      var ta = PRIORITE_TYPE[a.kind], tb = PRIORITE_TYPE[b.kind];
+      if (ta !== tb) return ta - tb;
+      var fa = ORDRE_FICHIER[a.itemId], fb = ORDRE_FICHIER[b.itemId];
+      if (fa !== fb) return fa - fb;
+      return a.sous < b.sous ? -1 : a.sous > b.sous ? 1 : 0;
+    });
+    liste.forEach(function (c, i) {
+      c.vague = Math.floor(i / bloc);
+      c.rangSujet = rang;
+      c.position = i;
+    });
+  });
+}
+function comparerIntroduction(a, b) {
+  if (a.vague !== b.vague) return a.vague - b.vague;
+  if (a.rangSujet !== b.rangSujet) return a.rangSujet - b.rangSujet;
+  return a.position - b.position;
+}
+
 /* ------------------------------------------------------------------- outils */
 
 function sansAcc(s) { return String(s).split(ACC).join(''); }
+/* Ponctuation que l'autocorrection ajoute en fin de saisie. Retirée aux deux
+   bouts seulement : jamais à l'intérieur, où elle peut être signifiante. */
+var PONCT_BORD = /^[\s.,;:!?"'«»]+|[\s.,;:!?"'«»]+$/g;
+
 function normaliser(s) {
   /* Accents toniques ignorés, casse ignorée, espaces normalisés.
-     ё et е restent distincts : c'est une exigence, pas un oubli. */
-  return sansAcc(String(s)).toLowerCase().trim().replace(/\s+/g, ' ');
+     ё et е restent distincts : c'est une exigence, pas un oubli.
+
+     La normalisation NFC est indispensable et n'y était pas. Un clavier peut
+     produire й comme и + U+0306 et ё comme е + U+0308 : visuellement
+     identiques, différents octet à octet. Sans cette ligne, 300 formes
+     contenant й et 172 contenant ё étaient refusées alors qu'elles
+     s'affichaient correctement — la pire des erreurs, celle que l'utilisateur
+     ne peut pas comprendre. */
+  return sansAcc(String(s).normalize('NFC'))
+    .toLowerCase().replace(PONCT_BORD, '').replace(/\s+/g, ' ');
 }
 function normFr(s) {
+  /* Côté français : diacritiques retirés, apostrophes unifiées, et trait
+     d'union traité comme une espace — « tee-shirt » et « tee shirt » sont la
+     même réponse, la ponctuation d'un mot composé n'est pas ce qu'on teste. */
   return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase().trim().replace(/[’']/g, "'").replace(/\s+/g, ' ');
+    .toLowerCase().replace(/[’']/g, "'").replace(/[-\u2011\u2013\u2014]/g, ' ')
+    .replace(PONCT_BORD, '').replace(/\s+/g, ' ');
 }
 function ech(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -97,19 +271,24 @@ function jour() { return 86400000; }
 
 var etat = charger();
 nettoyerEtats();
+preparerIntroduction(etat.reglages.depart, etat.reglages.bloc);
 
 function nettoyerEtats() {
   /* Une carte peut disparaître entre deux versions des données : une
      sous-catégorie retirée, un item corrigé. L'état correspondant devient
      orphelin et fausserait les compteurs et l'onglet Erreurs. */
-  var retires = 0;
   Object.keys(etat.etats).forEach(function (id) {
-    if (!PAR_ID[id]) { delete etat.etats[id]; retires += 1; }
+    if (!PAR_ID[id]) { delete etat.etats[id]; }
   });
   etat.signalements = etat.signalements.filter(function (s) {
     return !!PAR_ID[s.carteId];
   });
-  if (retires) sauver();
+  /* On réécrit systématiquement, pas seulement quand une carte a disparu :
+     l'état chargé vient d'être assaini — valeurs hors domaine ramenées dans
+     leurs bornes, champs manquants complétés — et cet assainissement ne
+     servait à rien tant qu'il restait en mémoire. Un état durablement
+     corrompu se répare ainsi au premier lancement. */
+  sauver();
 }
 
 function neuf() {
@@ -119,7 +298,10 @@ function neuf() {
   };
 }
 function reglagesParDefaut() {
-  return { longueur: 20, nouveaux: 4, revisionsSeules: false, cats: [], cas: [] };
+  return {
+    longueur: 30, nouveaux: 12, revisionsSeules: false, cats: [], cas: [],
+    depart: 'prep', bloc: 60
+  };
 }
 
 /* Un état venu du stockage n'est jamais digne de confiance : export édité à la
@@ -149,11 +331,13 @@ function assainir(e) {
      restreindre à la liste rejetterait toute valeur légitime future et rendait
      les harnais de test inopérants sans rien protéger de plus. */
   out.reglages = {
-    longueur: Math.round(nombre(r.longueur, 20, 1, 2000)),
-    nouveaux: Math.round(nombre(r.nouveaux, 4, 0, 15)),
+    longueur: Math.round(nombre(r.longueur, 30, 1, 2000)),
+    nouveaux: Math.round(nombre(r.nouveaux, 12, 0, 40)),
     revisionsSeules: r.revisionsSeules === true,
     cats: tableauDeTextes(r.cats),
-    cas: tableauDeTextes(r.cas)
+    cas: tableauDeTextes(r.cas),
+    depart: SUJETS.indexOf(r.depart) >= 0 ? r.depart : 'prep',
+    bloc: Math.round(nombre(r.bloc, 60, 10, 400))
   };
 
   var etats = (e.etats && typeof e.etats === 'object' && !Array.isArray(e.etats))
@@ -162,10 +346,17 @@ function assainir(e) {
     if (!cle) return;
     var x = etats[cle];
     if (!x || typeof x !== 'object') return;
+    /* Une échéance hors domaine est ramenée à zéro, donc à « échue », et non
+       à la date maximale : borner vers le haut ferait disparaître la carte
+       pour toujours. Devant une valeur incohérente, il faut redonner la carte,
+       jamais la perdre. */
+    var horizon = Date.now() + (INTERVALLE_MAX + 5) * 86400000;
+    var ech = nombre(x.echeance, 0, 0, null);
+    if (ech < 0 || ech > horizon) ech = 0;
     out.etats[cle] = {
       intervalle: Math.round(nombre(x.intervalle, 0, 0, INTERVALLE_MAX)),
       facilite: nombre(x.facilite, 2.5, 1.3, 5),
-      echeance: nombre(x.echeance, 0, 0, 8.64e15),
+      echeance: ech,
       repetitions: Math.round(nombre(x.repetitions, 0, 0, 10000)),
       produitUneFois: x.produitUneFois === true,
       tentatives: Math.round(nombre(x.tentatives, 0, 0, 1e6)),
@@ -293,15 +484,6 @@ function majSous(sid, reussi) {
 
 /* -------------------------------------------------------- file d'échéances */
 
-function rangCarte(c) {
-  var s = SOUS[c.sous];
-  if (!s) return 99;
-  var r = RANG[s.cas];
-  if (r == null) r = 60;
-  if (s.cas === 'gen' && s.nombre === 'pl') r = 50;
-  if (s.id.indexOf('genpl') === 0 || s.id === 'gen_pl_quantite') r = 50;
-  return r;
-}
 function cartesFiltrees() {
   var rg = etat.reglages;
   return CARTES.filter(function (c) {
@@ -358,10 +540,7 @@ function construireSession() {
   /* 2. les nouvelles, dans l'ordre d'introduction de §8.1 */
   var prises = 0;
   if (liste.length < rg.longueur && quota > 0) {
-    neuves.sort(function (a, b) {
-      var d = rangCarte(a) - rangCarte(b);
-      return d !== 0 ? d : (a.id < b.id ? -1 : 1);
-    });
+    neuves.sort(comparerIntroduction);
     var aPrendre = Math.min(quota, rg.longueur - liste.length);
     liste = liste.concat(neuves.slice(0, aPrendre));
     prises = Math.min(aPrendre, neuves.length);
@@ -376,22 +555,17 @@ function construireSession() {
       liste.slice(deja));
   }
 
-  /* 3. complément par tirage pondéré parmi les cartes NON échues, en
-        favorisant les faibles facilités. Le tirage aléatoire ne sert qu'ici. */
-  if (liste.length < rg.longueur && reste.length) {
-    var poids = reste.map(function (c) {
-      var e = etatDe(c.id);
-      return Math.max(0.1, 2.7 - e.facilite);
-    });
-    var total = poids.reduce(function (a, b) { return a + b; }, 0);
-    while (liste.length < rg.longueur && reste.length) {
-      var tir = Math.random() * total, i = 0;
-      while (i < reste.length - 1 && tir > poids[i]) { tir -= poids[i]; i += 1; }
-      liste.push(reste[i]);
-      total -= poids[i];
-      reste.splice(i, 1); poids.splice(i, 1);
-    }
-  }
+  /* Il n'y a pas d'étape 3. La consigne prévoyait de compléter la séance par
+     un tirage pondéré parmi les cartes NON échues, pour atteindre la longueur
+     demandée. Retiré : cela ramène des cartes déjà acquises avant leur
+     échéance, ce qui contredit le principe même de la répétition espacée et
+     encombre les séances de matière déjà sue. Une séance plus courte est
+     préférable, et son motif est affiché. La variable reste dans le code pour
+     mémoire de ce choix.
+     Conséquence assumée : au démarrage, la longueur de séance est gouvernée
+     par le quota de nouvelles cartes, pas par le curseur de longueur. */
+  void reste;
+
   return entrelacer(liste);
 }
 /* Seuils de régulation, exprimés en multiples de la longueur de session. */
@@ -466,6 +640,27 @@ function question(carte) {
     q.attendu = it.sg[i];
     q.libelleCase = NOM_CAS[CAS[i]] + ' singulier';
     q.caseVisee = { idx: i, nombre: 'sg' };
+    return q;
+  }
+  if (s.genre === 'flexion') {
+    /* Une sous-catégorie de flexion couvre plusieurs cellules — я, ты, он… ;
+       une carte en tire une, et la consigne la nomme, donc la réponse reste
+       unique. Même mécanisme que le genre tiré pour un adjectif. */
+    var dispo = (it.cellules || []).filter(function (cel) {
+      return s.cles === '*' || (s.cles || []).indexOf(cel.cle) >= 0;
+    });
+    if (!dispo.length) {
+      console.error('Carte de flexion sans cellule : ' + carte.id);
+      return null;
+    }
+    var cel = dispo[Math.floor(Math.random() * dispo.length)];
+    q.attendu = cel.forme;
+    q.libelleCase = cel.libelle;
+    q.caseVisee = { cle: cel.cle };
+    /* Pas de reconnaissance sur un item en série : sa glose nomme la série
+       entière, pas la forme affichée. « Traduisez никуда́ не » attendrait
+       « Négations en ни- », ce qui n'a pas de sens. */
+    if (vu && !it.serie && Math.random() < 0.25) q.sens = 'reconnaissance';
     return q;
   }
   if (s.genre === 'adj') {
@@ -544,9 +739,23 @@ function dessinerExercice() {
   } else if (q.sens === 'reconnaissance') {
     h.push('<div class="invite"><span class="ru ' + ech(it.type) + '">' +
       ech(q.attendu) + '</span></div>');
-    h.push('<div class="question">Traduisez en français.</div>');
-  } else {
+    h.push('<div class="question">Traduisez en français.' +
+      (it.precision ? ' <span class="dim">(' + ech(it.precision) + ')</span>'
+        : '') + '</div>');
+  } else if (it.serie) {
+    /* Item en série : ses cellules sont étiquetées par un SENS français, non
+       par une forme grammaticale. Afficher « ни-…не → nulle part » mêlerait
+       une tête de série russe et un sens visé français. On demande donc
+       directement la forme qui porte ce sens. */
     h.push('<div class="invite">' + ech(it.fr) + '</div>');
+    h.push('<div class="question">Quelle forme pour «&nbsp;' +
+      ech(q.libelleCase) + '&nbsp;» ?' +
+      (it.precision ? ' <span class="dim">(' + ech(it.precision) + ')</span>'
+        : '') + '</div>');
+  } else {
+    h.push('<div class="invite">' + ech(it.fr) +
+      (it.precision ? ' <span class="dim" style="font-size:16px">— ' +
+        ech(it.precision) + '</span>' : '') + '</div>');
     h.push('<div class="question"><span class="ru">' + ech(it.lemme) +
       '</span> &rarr; ' + ech(q.libelleCase) + '</div>');
   }
@@ -584,7 +793,15 @@ function dessinerExercice() {
   Array.prototype.forEach.call(document.querySelectorAll('[data-choix]'),
     function (b) {
       b.addEventListener('click', function () {
-        repondre(b.getAttribute('data-choix') + ' ' +
+        var v = b.getAttribute('data-choix');
+        /* Deux familles de choix binaires. Pour в/на, le bouton ne porte que
+           la préposition et le reste de la réponse est complété. Pour
+           l'aspect ou les verbes de mouvement, le bouton porte la réponse
+           entière. On distingue par le contenu de la liste. */
+        var complet = (sess.q.choix || []).some(function (x) {
+          return normaliser(x) === normaliser(sess.q.attendu);
+        });
+        repondre(complet ? v : v + ' ' +
           sansAcc(sess.q.attendu).split(' ').slice(1).join(' '));
       });
     });
@@ -602,6 +819,17 @@ function consigne(q) {
 }
 function badges(it) {
   var b = [];
+  if (it.type === 'flexion') {
+    /* le libellé vient du groupe de l'item ; la version précédente rangeait
+       les négations et la comparaison sous « Pronoms » */
+    var LIB_GROUPE = {
+      mouvement: 'verbe de mouvement', aspect: 'aspect', reflexif: 'verbe en -ся',
+      pronom: 'pronom', negation: 'négation', comparaison: 'comparaison'
+    };
+    b.push('<span class="badge">' +
+      ech(LIB_GROUPE[it.groupe] || it.groupe) + '</span>');
+    if (it.aspect) b.push('<span class="badge">' + ech(it.aspect) + '</span>');
+  }
   if (it.type === 'nom') b.push('<span class="badge">' +
     ({ m: 'masculin', f: 'féminin', n: 'neutre' }[it.genre] || '') + '</span>');
   if (it.anime) b.push('<span class="badge">animé</span>');
@@ -625,13 +853,10 @@ function repondre(saisie) {
     var homos = PAR_FORME[sansAcc(q.attendu).toLowerCase()] || [q.item];
     var refs = [];
     homos.concat([q.item]).forEach(function (x) {
-      refs = refs.concat([x.fr]).concat(x.frVariantes || []);
+      refs = refs.concat(glosesAcceptees(x));
     });
     var cible = normFr(donne);
-    reussi = refs.some(function (r) {
-      return normFr(r) === cible ||
-        normFr(r).split(/,\s*/).indexOf(cible) >= 0;
-    });
+    reussi = refs.indexOf(cible) >= 0;
     attenduAff = q.item.fr;
   } else {
     /* Correction stricte, mais une forme réellement variable ne doit pas
@@ -662,8 +887,32 @@ function variantesAcceptees(q) {
   var it = q.item;
   if (it.type === 'phrase') return it.accepte || [];
   if (!it.variantes || !q.caseVisee) return [];
+  if (q.caseVisee.cle) return it.variantes[q.caseVisee.cle] || [];
   var col = q.caseVisee.nombre, idx = q.caseVisee.idx;
   return it.variantes[col + '.' + idx] || [];
+}
+/* Formulations acceptées pour une glose française. « café (lieu) » doit
+   accepter « café », et « poulet, poule » doit accepter chacun des deux. La
+   parenthèse est un désambiguïsateur d'affichage, pas une partie de la
+   traduction : elle est retirée avant comparaison, et son contenu n'est jamais
+   accepté seul. Les précisions du bloc 2 — imperfectif, en ce moment — ne
+   sont pas dans la glose mais dans le champ `precision`, précisément pour ne
+   pas polluer cette liste. */
+function glosesAcceptees(it) {
+  var brutes = [it.fr].concat(it.frVariantes || []);
+  var out = [];
+  brutes.forEach(function (r) {
+    if (!r) return;
+    var sansParen = String(r).replace(/\s*\([^)]*\)\s*/g, ' ');
+    [r, sansParen].forEach(function (x) {
+      out.push(normFr(x));
+      String(x).split(/[,;]/).forEach(function (seg) {
+        var n = normFr(seg);
+        if (n) out.push(n);
+      });
+    });
+  });
+  return out.filter(function (x, i) { return x && out.indexOf(x) === i; });
 }
 function distance1(a, b) {
   /* Vrai si les deux chaînes diffèrent d'un seul caractère : substitution,
@@ -752,18 +1001,72 @@ function itemPorteur(q) {
   if (q.item.type !== 'phrase') return q.item;
   var ind = q.item.indice ? sansAcc(q.item.indice).toLowerCase() : '';
   if (PAR_LEMME[ind]) return PAR_LEMME[ind];
+  /* l'indice peut nommer une paire ou une liste : « идти́ / ходи́ть »,
+     « никогда, никто, ничего ». On essaie chaque terme. */
+  var termes = ind.split(/[/,;]/);
+  var rep = normaliser(q.attendu);
+  var candidats = [];
+  for (var t = 0; t < termes.length; t += 1) {
+    var mot = termes[t].trim();
+    if (PAR_LEMME[mot]) candidats.push(PAR_LEMME[mot]);
+    else if (PAR_FORME[mot]) candidats = candidats.concat(PAR_FORME[mot]);
+  }
+  /* Quand l'indice nomme une paire — « идти́ / ходи́ть » —, le bon porteur est
+     celui dont une forme est la réponse attendue, sinon la grille affichée
+     n'aurait aucune case à surligner. */
+  for (var i = 0; i < candidats.length; i += 1) {
+    if (porteLaForme(candidats[i], rep)) return candidats[i];
+  }
+  if (candidats.length) return candidats[0];
+  /* la réponse entière peut être une entrée du lexique : « никогда́ не » */
+  if (PAR_FORME[rep]) return PAR_FORME[rep][0];
   /* l'indice peut être une forme fléchie : шко́ле, о́кна, друзья́ */
   if (PAR_FORME[ind]) return PAR_FORME[ind][0];
-  /* dernier recours : la réponse attendue elle-même */
-  var rep = sansAcc(q.attendu).toLowerCase().split(' ').pop();
-  if (PAR_FORME[rep]) return PAR_FORME[rep][0];
+  /* dernier recours : le dernier mot de la réponse attendue */
+  var dernier = rep.split(' ').pop();
+  if (PAR_FORME[dernier]) return PAR_FORME[dernier][0];
   return null;
+}
+function porteLaForme(it, forme) {
+  if (!it) return false;
+  if (it.type === 'flexion') {
+    return (it.cellules || []).some(function (c) {
+      return normaliser(c.forme) === forme;
+    });
+  }
+  var series = it.type === 'adjectif' ? ['m', 'f', 'n', 'pl'] : ['sg', 'pl'];
+  return series.some(function (k) {
+    return (it[k] || []).some(function (f) { return normaliser(f) === forme; });
+  });
 }
 function paradigme(q) {
   var it = itemPorteur(q);
   if (!it) return '';
+  if (it.type === 'flexion') return grilleFlexion(it, q);
   if (it.type === 'adjectif') return grilleAdj(it, q);
   return grilleNom(it, q);
+}
+function grilleFlexion(it, q) {
+  var vise = q.caseVisee && q.caseVisee.cle;
+  if (!vise) {
+    /* phrase rattachée à un item de flexion : on retrouve la cellule par la
+       réponse attendue */
+    var dernier = normaliser(q.attendu);
+    (it.cellules || []).forEach(function (c) {
+      if (normaliser(c.forme) === dernier) vise = c.cle;
+    });
+  }
+  var h = ['<table class="para">'];
+  (it.cellules || []).forEach(function (c) {
+    h.push('<tr><td class="cas">' + ech(c.libelle) + '</td><td class="' +
+      (c.cle === vise ? 'vise ' : '') + 'ru">' + ech(c.forme) + '</td></tr>');
+  });
+  h.push('</table>');
+  if (it.paire) {
+    h.push('<div class="question dim">Partenaire : <span class="ru">' +
+      ech(it.paire) + '</span></div>');
+  }
+  return h.join('');
 }
 function caseCiblee(it, q) {
   /* La case visée est déterminée par la sous-catégorie. Quand la réponse
@@ -782,6 +1085,7 @@ function caseCiblee(it, q) {
      forme surlignerait toujours le nominatif. On garde la case demandée, ou à
      défaut la ligne du cas testé — le cas des phrases, qui n'ont pas de case
      propre (ча́шка ко́фе, в кафе́). */
+  if (it.type === 'flexion') return q.caseVisee || null;
   if (it.irregularite === 'indeclinable') {
     return q.caseVisee ||
       (prio >= 0 ? { idx: prio, nombre: 'sg' } : null);
@@ -831,13 +1135,13 @@ function grilleNom(it, q) {
 }
 function grilleAdj(it, q) {
   var vise = caseCiblee(it, q), h = [];
-  h.push('<table class="para"><tr><th></th><th>m</th><th>f</th><th>n</th>' +
+  h.push('<table class="para adj"><tr><th></th><th>m</th><th>f</th><th>n</th>' +
     '<th>pl</th></tr>');
   for (var i = 0; i < 6; i += 1) {
     h.push('<tr><td class="cas">' + ABREV[i] + '</td>');
     ['m', 'f', 'n', 'pl'].forEach(function (col) {
       var v = vise && vise.idx === i && vise.nombre === col;
-      h.push('<td class="' + (v ? 'vise ' : '') + 'ru" style="font-size:14px">' +
+      h.push('<td class="' + (v ? 'vise ' : '') + 'ru">' +
         ech(it[col][i]) + '</td>');
     });
     h.push('</tr>');
@@ -938,10 +1242,27 @@ function vuePratiquer() {
     Math.min(qEff, pool.length - vues) + (vues - dus));
   h.push('<div class="question">' + dus + ' échues, ' + (pool.length - vues) +
     ' jamais vues, ' + pool.length + ' cartes dans le filtre.</div>');
+  var jamaisVues = pool.length - vues;
+  var cause = '';
+  if (prevu < rg.longueur) {
+    if (jamaisVues > qEff && qEff === quota) {
+      /* la contrainte est le quota de nouvelles cartes, pas le corpus : le dire,
+         au lieu d'accuser le filtre à tort */
+      cause = ' Moins que la longueur demandée, parce que le quota de ' +
+        'nouvelles cartes est à ' + qEff + ' et qu\u2019aucune révision ' +
+        'n\u2019est échue. Montez le curseur ci-dessous pour une séance plus ' +
+        'longue.';
+    } else if (jamaisVues > qEff) {
+      cause = ' Moins que la longueur demandée : l\u2019introduction de ' +
+        'nouvelles cartes est bridée, voir ci-dessous.';
+    } else {
+      cause = ' Moins que la longueur demandée : il ne reste que ' + jamaisVues +
+        ' carte' + (jamaisVues > 1 ? 's' : '') + ' jamais vue' +
+        (jamaisVues > 1 ? 's' : '') + ' dans ce filtre.';
+    }
+  }
   h.push('<div class="question dim">Cette session comptera <b>' + prevu +
-    '</b> question' + (prevu > 1 ? 's' : '') + '.' +
-    (prevu < rg.longueur ? ' Moins que la longueur demandée : il n\u2019y a pas ' +
-      'assez de cartes disponibles dans le filtre.' : '') + '</div>');
+    '</b> question' + (prevu > 1 ? 's' : '') + '.' + cause + '</div>');
   var motif = motifRegulation(quota, dus, rg.longueur);
   if (motif) {
     h.push('<div class="question" style="color:var(--blue)">' + ech(motif) +
@@ -953,24 +1274,59 @@ function vuePratiquer() {
   h.push('<div style="height:12px"></div>');
   h.push('<div class="mono dim">Longueur</div>');
   h.push('<div class="chips" id="ch-longueur">' + [10, 20, 30, 50].map(function (v) {
-    return '<button class="chip" data-v="' + v + '" aria-pressed="' +
-      (rg.longueur === v) + '">' + v + '</button>';
+    return '<button class="chip" data-v="' + ech(v) + '" aria-pressed="' +
+      (rg.longueur === v) + '">' + ech(v) + '</button>';
   }).join('') + '</div>');
   h.push('<div style="height:12px"></div>');
   h.push('<div class="mono dim">Nouvelles cartes par session : <b id="lbl-nouveaux">' +
     rg.nouveaux + '</b></div>');
-  h.push('<input type="range" id="rg-nouveaux" min="0" max="15" value="' +
+  h.push('<input type="range" id="rg-nouveaux" min="0" max="40" value="' +
     rg.nouveaux + '"' + (rg.revisionsSeules ? ' disabled' : '') + '>');
   h.push('</div>');
 
+  h.push('<div class="carte"><h3>Ordre d\u2019introduction</h3>');
+  h.push('<div class="question dim">Les cartes jamais vues arrivent par blocs, ' +
+    'un sujet après l\u2019autre, puis le cycle reprend pour une deuxième ' +
+    'vague. Les révisions échues, elles, mélangent tous les sujets : c\u2019est ' +
+    'ainsi qu\u2019un rappel d\u2019accusatif tombe alors que vous êtes sur le ' +
+    'datif.</div>');
+  /* Un sujet sans aucune carte ne doit pas être proposé : sans le bloc 2,
+     choisir « Verbes » donnerait une séance vide sans que rien ne l'explique. */
+  var sujetsDispo = SUJETS.filter(function (x) {
+    if (x === 'genpl') return false;
+    return CARTES.some(function (c) { return c.sujet === x; });
+  });
+  h.push('<div class="mono dim">Commencer par</div><div class="chips" ' +
+    'id="ch-depart">' + sujetsDispo
+      .map(function (x) {
+        return '<button class="chip" data-v="' + ech(x) + '" aria-pressed="' +
+          (rg.depart === x) + '">' + ech(NOM_SUJET[x]) + '</button>';
+      }).join('') + '</div>');
+  h.push('<div class="question dim" style="margin-top:6px">Ordre retenu : ' +
+    ordreSujets(rg.depart).map(function (x) { return ech(NOM_SUJET[x]); })
+      .join(' &rarr; ') + '</div>');
+  h.push('<div style="height:10px"></div>');
+  h.push('<div class="mono dim">Cartes par bloc</div><div class="chips" ' +
+    'id="ch-bloc">' + [30, 60, 100, 200].map(function (v) {
+      return '<button class="chip" data-v="' + ech(v) + '" aria-pressed="' +
+        (rg.bloc === v) + '">' + ech(v) + '</button>';
+    }).join('') + '</div>');
+  h.push('<div class="question dim" style="margin-top:6px">À ' + rg.nouveaux +
+    ' nouvelles cartes par séance, un bloc de ' + rg.bloc + ' dure environ ' +
+    Math.max(1, Math.round(rg.bloc / Math.max(1, rg.nouveaux))) +
+    ' séances.</div>');
+  h.push('</div>');
+
+  h.push(panneauProgression());
+
   h.push('<div class="carte"><h3>Filtres</h3>');
-  h.push('<div class="mono dim">Cas</div><div class="chips" id="ch-cas">' +
-    CAS.map(function (c) {
-      return '<button class="chip" data-v="' + c + '" aria-pressed="' +
+  h.push('<div class="mono dim">Thème</div><div class="chips" id="ch-cas">' +
+    THEMES.map(function (c) {
+      return '<button class="chip" data-v="' + ech(c) + '" aria-pressed="' +
         (rg.cas.indexOf(c) >= 0) + '">' + ech(NOM_CAS[c]) + '</button>';
     }).join('') + '</div>');
   var cats = {};
-  LEXIQUE.forEach(function (it) { if (it.categorie) cats[it.categorie] = 1; });
+  LEX.forEach(function (it) { if (it.categorie) cats[it.categorie] = 1; });
   h.push('<div style="height:10px"></div><div class="mono dim">Catégories</div>' +
     '<div class="chips" id="ch-cats">' + Object.keys(cats).sort().map(function (c) {
       return '<button class="chip" data-v="' + ech(c) + '" aria-pressed="' +
@@ -993,9 +1349,55 @@ function vuePratiquer() {
     el('lbl-nouveaux').textContent = rg.nouveaux; sauver();
   });
   chips('ch-longueur', function (v) { rg.longueur = parseInt(v, 10); });
+  chips('ch-depart', function (v) {
+    rg.depart = v;
+    preparerIntroduction(rg.depart, rg.bloc);
+  });
+  chips('ch-bloc', function (v) {
+    rg.bloc = parseInt(v, 10);
+    preparerIntroduction(rg.depart, rg.bloc);
+  });
   chips('ch-cas', function (v) { bascule(rg.cas, v); });
   chips('ch-cats', function (v) { bascule(rg.cats, v); });
 }
+/* Un sujet est « acquis » quand toutes ses cartes ont été introduites et
+   réussies au moins deux fois en production. C'est la définition qui compte
+   pour savoir si l'on peut passer à autre chose sans rien perdre. */
+function panneauProgression() {
+  var stats = {};
+  SUJETS.forEach(function (x) {
+    stats[x] = { total: 0, vues: 0, acquises: 0 };
+  });
+  CARTES.forEach(function (c) {
+    var st = stats[c.sujet];
+    if (!st) return;
+    st.total += 1;
+    var e = etatDe(c.id);
+    if (!e) return;
+    st.vues += 1;
+    if (e.repetitions >= 2 && e.produitUneFois) st.acquises += 1;
+  });
+  var h = ['<div class="carte"><h3>Progression par sujet</h3>'];
+  h.push('<table class="para"><tr><th>Sujet</th><th>vues</th>' +
+    '<th>acquises</th><th>total</th></tr>');
+  ordreSujets(etat.reglages.depart).forEach(function (x) {
+    var st = stats[x];
+    if (!st || !st.total) return;
+    var fini = st.vues === st.total && st.acquises === st.total;
+    h.push('<tr><td' + (fini ? ' class="vise"' : '') + '>' +
+      ech(NOM_SUJET[x]) + (fini ? ' &check;' : '') + '</td>' +
+      '<td class="cas">' + st.vues + '</td>' +
+      '<td class="cas">' + st.acquises + '</td>' +
+      '<td class="cas">' + st.total + '</td></tr>');
+  });
+  h.push('</table>');
+  h.push('<div class="question dim" style="margin-top:8px">« Acquise » veut ' +
+    'dire : produite correctement au moins deux fois. Une carte acquise ne ' +
+    'revient qu\u2019à son échéance, jamais en remplissage de séance.</div>');
+  h.push('</div>');
+  return h.join('');
+}
+
 function bascule(tab, v) {
   var i = tab.indexOf(v);
   if (i >= 0) tab.splice(i, 1); else tab.push(v);
@@ -1053,15 +1455,16 @@ function vueErreurs() {
 function vueStats() {
   var h = [];
   var parCas = {};
-  CAS.forEach(function (c) { parCas[c] = { t: 0, r: 0 }; });
-  GRAMMAIRE.sous.forEach(function (s) {
+  THEMES.forEach(function (c) { parCas[c] = { t: 0, r: 0 }; });
+  GRAM.sous.forEach(function (s) {
     var st = etat.sous[s.id];
     if (!st) return;
+    if (!parCas[s.cas]) parCas[s.cas] = { t: 0, r: 0 };
     parCas[s.cas].t += st.tentatives;
     parCas[s.cas].r += st.reussites;
   });
-  h.push('<div class="carte"><h3>Par cas</h3>');
-  CAS.forEach(function (c) {
+  h.push('<div class="carte"><h3>Par thème</h3>');
+  THEMES.forEach(function (c) {
     h.push(ligneStat(NOM_CAS[c], parCas[c].t, parCas[c].r, false));
   });
   h.push('</div>');
@@ -1069,8 +1472,8 @@ function vueStats() {
   h.push('<div class="carte"><h3>Par point de grammaire</h3>');
   h.push('<div class="question dim">Une sous-catégorie comptant moins de dix ' +
     'tentatives reste grisée : en dessous, un taux d\u2019erreur est du bruit.</div>');
-  CAS.forEach(function (c) {
-    var liste = GRAMMAIRE.sous.filter(function (s) { return s.cas === c; });
+  THEMES.forEach(function (c) {
+    var liste = GRAM.sous.filter(function (s) { return s.cas === c; });
     if (!liste.length) return;
     h.push('<div class="mono dim" style="margin:10px 0 5px">' +
       ech(NOM_CAS[c]) + '</div>');
@@ -1102,7 +1505,7 @@ function vueStats() {
   var vues = Object.keys(etat.etats).length;
   h.push('<div class="carte"><h3>Corpus</h3><div class="question">' +
     CARTES.length + ' cartes au total, ' + vues + ' abordées, ' +
-    LEXIQUE.length + ' items lexicaux, ' + PHRASES.length +
+    LEX.length + ' items lexicaux, ' + PHR.length +
     ' phrases en contexte.</div></div>');
 
   el('vue').innerHTML = h.join('');
@@ -1142,8 +1545,8 @@ function vueRegles() {
   var h = ['<div class="question dim">Référence du bloc 1, consultable à tout ' +
     'moment. Aucune règle n\u2019est affichée avant une réponse pendant ' +
     'l\u2019exercice.</div>'];
-  CAS.forEach(function (c) {
-    var pts = GRAMMAIRE.points.filter(function (p) { return p.cas === c; });
+  THEMES.forEach(function (c) {
+    var pts = GRAM.points.filter(function (p) { return p.cas === c; });
     if (!pts.length) return;
     h.push('<h2>' + ech(NOM_CAS[c]) + '</h2>');
     pts.forEach(function (p) {
@@ -1260,15 +1663,36 @@ function enregistrerSW() {
 
 /* ------------------------------------------------------------------ démarrage */
 
-Array.prototype.forEach.call(document.querySelectorAll('#onglets button'),
-  function (b) {
-    b.addEventListener('click', function () {
-      sess = null;
-      jetonVue += 1;
-      rendre(b.getAttribute('data-onglet'));
+try {
+  Array.prototype.forEach.call(document.querySelectorAll('#onglets button'),
+    function (b) {
+      b.addEventListener('click', function () {
+        sess = null;
+        jetonVue += 1;
+        try { rendre(b.getAttribute('data-onglet')); }
+        catch (err) { afficherPanne(err); }
+      });
     });
-  });
-rendre('pratiquer');
-enregistrerSW();
+  rendre('pratiquer');
+  enregistrerSW();
+} catch (err) {
+  afficherPanne(err);
+}
+
+/* Un plantage inattendu doit s'afficher, pas laisser une page morte. Sans ce
+   filet, un onglet qui échoue donne une interface inerte où les clics ne
+   produisent rien : impossible à diagnostiquer sans console. */
+function afficherPanne(err) {
+  console.error('Panne du moteur', err);
+  var vue = el('vue');
+  if (!vue) return;
+  vue.innerHTML = '<div class="carte"><h3 style="color:#e05c5c">Panne du ' +
+    'moteur</h3><p>Une erreur imprévue a interrompu l\u2019affichage. ' +
+    'L\u2019application reste utilisable en rechargeant la page ; votre ' +
+    'progression est enregistrée.</p><div class="diff">' +
+    ech((err && (err.message || String(err))) || 'erreur inconnue') +
+    '</div><p class="dim">Signalez ce message : il identifie la cause.</p>' +
+    '</div>';
+}
 
 })();

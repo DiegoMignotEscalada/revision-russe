@@ -6,10 +6,10 @@ un item à supprimer sans vérification.
 
 | Niveau de correspondance | Items |
 | --- | --- |
-| Exacte | 373 |
-| Après confusion ё/е, и/й, ъ/ь | 4 |
+| Exacte | 417 |
+| Après confusion ё/е, и/й, ъ/ь | 5 |
 | À une lettre près | 9 |
-| Aucune | 0 |
+| Aucune | 2 |
 
 ## Items sans correspondance
 

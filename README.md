@@ -49,6 +49,7 @@ python3 -m http.server 8000
 index.html          structure et styles
 app.js              moteur : SRS, sessions, rendu, correction, statistiques
 data/lexique.js     noms et adjectifs, six cas, deux nombres
+data/bloc2.js       verbes, pronoms, comparaison, négation, numéraux
 data/grammaire.js   registre des sous-catégories et points de grammaire
 data/phrases.js     phrases en contexte
 sw.js               service worker
@@ -67,8 +68,18 @@ tools/audit-correction.js  propriétés de la correction, 33 000 perturbations
 tools/audit-robustesse.js  état corrompu, quota, doubles clics, injection
 tools/audit-invariants.js  simulation d'un an avec horloge fictive
 tools/audit-ambiguite.py   unicité des consignes et des réponses
+tools/audit-reconnaissance.js  gloses françaises saisissables
+tools/audit-saisie.js      Unicode, claviers, ponctuation
+tools/audit-affichage.js   débordements, contraste, échappement
+tools/audit-sw.js          service worker exécuté dans un faux contexte
+tools/audit-horloge-integrite.js  horloge, intégrité croisée, filtres
+tools/audit-endurance.js   cinquante séances enchaînées
+tools/test-blocs.js        absence du bloc 2, migration, onglets
+tools/generer-bloc2.py     générateur du bloc 2
 tools/tout-verifier.sh     lanceur unique de tous les contrôles
 INVARIANTS.md              ce qui doit être vrai, et par quel script
+SECURITE.md                audit de sécurité : surfaces, protections, décisions
+tools/audit-securite.js    injections, pollution de prototype, réseau, CSP
 ```
 
 ## Ajouter ou corriger du contenu

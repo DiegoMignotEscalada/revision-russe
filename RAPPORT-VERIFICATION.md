@@ -76,7 +76,7 @@ Produit par `tools/verifier.py`. Couvre les treize points de SPEC §8.5.
 
 ## 9. Accusatif animé = génitif, partout
 
-- 56 items animés contrôlés, singulier et pluriel
+- 58 items animés contrôlés, singulier et pluriel
 - де́душка → **де́душку** (masculin en -а, exception)
 - па́па → **па́пу** (masculin en -а, exception)
 - колле́га → **колле́гу** (masculin en -а, exception)
@@ -104,24 +104,25 @@ Produit par `tools/verifier.py`. Couvre les treize points de SPEC §8.5.
 
 ## 12. Phrases : cohérence du cas, de la question et de la sous-catégorie
 
-- 111 phrases sur 111 contrôlées sans écart
+- 155 phrases sur 155 contrôlées sans écart
 
 ## 13. Cohérence structurelle
 
-- 497 identifiants, tous uniques
-- 4758 formes russes contrôlées : douze cases ou marque d’invariabilité, un seul accent tonique par mot, aucun ё accentué
-- 51 sous-catégories, toutes rattachées à un point de grammaire existant
+- 588 identifiants, tous uniques
+- 5015 formes russes contrôlées : douze cases ou marque d’invariabilité, un seul accent tonique par mot, aucun ё accentué
+- 69 sous-catégories, toutes rattachées à un point de grammaire existant
 
 ## Couverture
 
 | Mesure | Valeur |
 | --- | --- |
-| Noms | 342 |
+| Noms | 344 |
+| Items de flexion (verbes, pronoms) | 45 |
 | Adjectifs | 44 |
-| Phrases en contexte | 111 |
-| Points de grammaire | 22 |
-| Sous-catégories | 51 |
-| Cartes | 1297 |
+| Phrases en contexte | 155 |
+| Points de grammaire | 34 |
+| Sous-catégories | 69 |
+| Cartes | 1430 |
 
 Débit mesuré par simulation d’un an (tools/audit-invariants.js), à 25 % de réponses fausses. La colonne « corpus » indique le temps nécessaire pour aborder les 1297 cartes au rythme donné.
 
@@ -133,7 +134,7 @@ Débit mesuré par simulation d’un an (tools/audit-invariants.js), à 25 % de 
 
 Deux enseignements. Le curseur « nouvelles cartes par séance » ne change presque rien : passer de 4 à 8 fait 328 cartes contre 348, parce que la régulation par l’arriéré gouverne. Ce qui compte est la longueur de séance, la fréquence, et le taux de réussite : passer de 25 % à 15 % de réponses fausses fait autant que rallonger la séance de moitié, soit 516 cartes introduites au lieu de 348.
 
-Sous-catégories portées par moins de six cartes, par nature du phénomène et non par défaut de contenu : nom_pl_supplet (2), instr_pl_mi (3), instr_saisons (4), prep_pl_phrase (4), genpl_supplet (5).
+Sous-catégories portées par moins de six cartes, par nature du phénomène et non par défaut de contenu : comparatif_serie (1), kotoryj (1), negation_serie (1), nom_pl_supplet (2), verbe_futur (2), verbe_reflexif (2), instr_pl_mi (3), instr_saisons (4), prep_pl_phrase (4), comparatif_egal (5), genpl_supplet (5), kotoryj_phrase (5), negation_mot (5), numeral_accord (5).
 
 ## Limite de ce contrôle
 

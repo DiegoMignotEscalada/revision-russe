@@ -15,7 +15,8 @@ Trois familles de fichiers. Seule la première fait tourner l'application.
 |---|---|
 | `index.html` | La page. Contient toute la mise en forme. |
 | `app.js` | Le moteur : sessions, correction, répétition espacée, statistiques. |
-| `data/lexique.js` | 342 noms et 44 adjectifs, avec leurs douze formes. |
+| `data/lexique.js` | 344 noms et 44 adjectifs, avec leurs douze formes. |
+| `data/bloc2.js` | Verbes, pronoms, comparaison, négation, numéraux. |
 | `data/phrases.js` | 111 phrases en contexte. |
 | `data/grammaire.js` | Les 22 points de grammaire et les 51 sous-catégories. |
 | `sw.js` | Le fichier qui permet le fonctionnement hors connexion. |
@@ -189,14 +190,29 @@ Deux choses à savoir sur la saisie :
 
 Dans l'onglet Pratiquer :
 
-- **Longueur** : mettez **30** plutôt que 20. Mesuré par simulation, c'est ce
-  qui fait la vraie différence sur la couverture du corpus : 516 cartes
-  introduites la première année contre 328.
-- **Nouvelles cartes par session** : laissez **8**. Ce curseur compte peu, la
-  régulation par l'arriéré gouverne. Ne le poussez pas à 15 en croyant
-  accélérer.
+- **Longueur** : 30. C'est le réglage par défaut.
+- **Nouvelles cartes par session** : 12 par défaut. Au démarrage, quand aucune
+  révision n'est échue, ce curseur détermine seul la longueur de la séance :
+  montez-le si vos séances vous paraissent courtes.
+- **Commencer par** : choisissez le sujet par lequel démarrer. L'ordre canonique
+  est tourné à partir de ce sujet, ce qui permet de reporter à la fin un sujet
+  déjà beaucoup travaillé.
+- **Cartes par bloc** : 60 par défaut. C'est le nombre de cartes nouvelles d'un
+  même sujet servies avant de passer au suivant. À 12 nouvelles par séance, cela
+  fait environ cinq séances sur le même sujet.
 - **Filtres** : n'en mettez aucun au début. Ils servent plus tard, pour
   travailler un cas précis.
+
+Le panneau **Progression par sujet** indique, pour chacun des sept sujets, le
+nombre de cartes vues et le nombre acquises — produites correctement au moins
+deux fois. Un sujet entièrement acquis porte une coche. Ses cartes ne reviennent
+alors qu'à leur échéance, en rappel, y compris pendant que vous travaillez un
+autre sujet.
+
+Les cartes sont introduites par blocs de quarante par cas : environ cinq séances de
+prépositionnel, puis cinq d'accusatif, puis de datif, et ainsi de suite, avant de
+revenir au prépositionnel pour une deuxième vague. Les révisions dues, elles, mélangent
+les cas d'elles-mêmes.
 
 Rythme visé : quatre à cinq séances par semaine. À ce rythme, comptez deux ans
 et demi pour aborder les 1 297 cartes. Le levier n'est pas le volume mais la

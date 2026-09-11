@@ -4,7 +4,8 @@ Document de référence. Le code est écrit contre cette spécification. Toute d
 constatée entre le code et ce document est un défaut du code, sauf si ce document est
 modifié d'abord.
 
-Version 1.0 — bloc 1 (les six cas, noms et adjectifs).
+Version 2.0 — bloc 1 (les six cas, noms et adjectifs) et bloc 2 (verbes,
+pronoms, comparaison, négation, numéraux).
 
 ---
 
@@ -17,12 +18,37 @@ Le contenu est le chantier du projet, pas le moteur. Une erreur dans les donnée
 mémorise : c'est le pire résultat possible pour un outil de mémorisation. Toute forme
 douteuse porte `aValider: true` plutôt qu'une valeur devinée.
 
-### Hors périmètre de la v1
+### Contenu du bloc 2
+
+Ajouté après le bloc 1, dans `data/bloc2.js`, sans modifier les fichiers du
+bloc 1. Nouveau type d'item, `flexion` : une liste de cellules étiquetées — я,
+ты, он, passé masculin, futur, datif — au lieu d'un tableau de six cas. Un seul
+mécanisme couvre ainsi les conjugaisons, les pronoms déclinés et le relatif.
+
+| Thème | Contenu | Page du support |
+|---|---|---|
+| Verbes de mouvement | идти́/ходи́ть, е́хать/е́здить, лете́ть/лета́ть, плыть/пла́вать, бежа́ть/бе́гать, présent complet | 20, 54, 55 |
+| Aspect | les dix paires du support, avec le passé des deux membres | 48 |
+| Passé et futur | приезжа́ть/прие́хать aux trois temps, futur composé et futur simple | 79 |
+| Verbes en ‑ся | улыба́ться, боя́ться, présent et passé | 53 |
+| Pronoms au datif | я, ты, он, она́, оно́, мы, вы, они́, avec la forme après préposition | 98 |
+| Relatif кото́рый | onze formes, quatre genres et quatre cas | 66 |
+| Comparaison d'égalité | тако́й же / так же, formes affirmatives et négatives | 95 |
+| Négations en ни‑ | les cinq mots, double négation | 20, 84 |
+| Numéraux | de сто à миллио́н, accord après 1, 2‑4, 5+ | 57 |
+| Impératif | règle et exemples, sans item testable | 96 |
+
+Chaque forme a été relevée à l'œil sur l'image de la page, la reconnaissance
+optique servant seulement à localiser les pages. Le passé des paires d'aspect
+est formé selon la règle de la page 79, à l'exception des supplétions
+шёл, пошёл, пришёл.
+
+### Hors périmètre
 
 - Russe des affaires.
 - Audio, appel à un modèle de langage, production libre corrigée automatiquement.
-- Verbes, syntaxe, lexique thématique étendu : blocs 2 à 4, ajoutés plus tard aux
-  fichiers de données sans toucher au moteur.
+- Préverbes de mouvement au-delà de при‑, participes, gérondifs, conditionnel :
+  le support ne les traite pas assez pour en faire des cartes.
 
 ---
 
@@ -39,6 +65,8 @@ douteuse porte `aValider: true` plutôt qu'une valeur devinée.
 | Unité d'ordonnancement | Couple (item, sous‑catégorie) | Voir §4.3 — révision de la v0 |
 | Qualité SM‑2 en réussite | q = 5, non q = 4 | Voir §2.4 — mesuré, pas supposé |
 | Introduction de nouvelles cartes | Régulée par l'arriéré | Voir §2.5 — mesuré |
+| Progression par cas | Blocs réglables, 60 par défaut, sujet de départ au choix | Voir §2.6 |
+| Étape 3 de la construction de session | Supprimée | Voir §2.7 |
 | Phrases d'exercice | Réécrites, non recopiées | Voir §7.2 — révision de la v0 |
 | Nombre de formes par item | 12, ou `indeclinable`, ou `pluriel_seul`, ou `singulier_seul` | Voir §4.1 — révision de la v0 |
 
@@ -78,6 +106,41 @@ proportion tombe à **1 %**.
 C'est un écart à la lettre de la consigne, réversible en changeant un chiffre dans
 `majSM2`. L'intervalle est par ailleurs borné à cinq ans, pour éviter des échéances
 absurdes après une longue série de réussites.
+
+### §2.6 — Progression par cas : blocs bornés, non exhaustion
+
+§8.1 impose une progression par cas. Appliqué à la lettre, cela signifie épuiser les
+366 cartes de prépositionnel avant la première d'accusatif : à huit nouvelles cartes
+par séance, 46 séances, et davantage avec la régulation, soit plus de six mois sur un
+seul cas. Constaté à l'usage.
+
+Retenu : les blocs par cas sont conservés mais bornés, à 60 cartes par défaut,
+réglable de 30 à 200. Le **sujet de départ est réglable** : l'ordre canonique est
+tourné à partir du sujet choisi, les autres suivant dans le même ordre relatif. Un
+sujet déjà beaucoup travaillé peut ainsi être reporté à la fin du cycle. Un bloc de
+prépositionnel, un d'accusatif, un de datif, et ainsi de suite, puis retour au
+prépositionnel pour une deuxième vague. Mesuré : l'accusatif apparaît à la sixième
+séance et le datif à la onzième, au lieu de la quarante-sixième et de la
+soixantième.
+
+À l'intérieur d'un cas, l'ordre était alphabétique par identifiant, ce qui donnait
+**seize adjectifs d'affilée comme toutes premières cartes de l'application**, avant le
+premier nom. L'ordre est maintenant : les noms dans l'ordre thématique du fichier de
+données, puis les phrases en contexte, puis les adjectifs, qui présupposent les noms.
+Les premières cartes sont désormais го́род, теа́тр, клуб, музе́й au prépositionnel.
+
+### §2.7 — Suppression de l'étape 3 : une carte acquise ne revient qu'à son échéance
+
+§6.1 prévoyait de compléter une séance trop courte par un tirage pondéré parmi les
+cartes **non échues**, en favorisant les faibles facilités. Cette étape est supprimée.
+
+Motif : elle ramène des cartes déjà acquises avant leur échéance, ce qui contredit le
+principe de la répétition espacée et encombre les séances de matière déjà sue. Une
+séance plus courte est préférable, et son motif est désormais affiché. Le curseur des
+nouvelles cartes, monté jusqu'à 40, est le levier de longueur au démarrage.
+
+Conséquence assumée : la longueur de séance annoncée par le curseur n'est atteinte que
+lorsque l'arriéré de révisions le permet. C'est le comportement correct.
 
 ### §2.5 — Introduction régulée par l'arriéré
 

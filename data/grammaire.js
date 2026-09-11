@@ -439,7 +439,7 @@ const GRAMMAIRE = {
   {
    "id": "adj_acc",
    "cas": "acc",
-   "libelle": "Adjectif au accusatif",
+   "libelle": "Adjectif à l’accusatif",
    "cellule": 3,
    "nombre": "sg",
    "genre": "adj",
@@ -448,7 +448,7 @@ const GRAMMAIRE = {
   {
    "id": "adj_instr",
    "cas": "instr",
-   "libelle": "Adjectif au instrumental",
+   "libelle": "Adjectif à l’instrumental",
    "cellule": 4,
    "nombre": "sg",
    "genre": "adj",

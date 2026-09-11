@@ -8387,6 +8387,84 @@ const LEXIQUE = [
   ]
  },
  {
+  "id": "lex_okulist",
+  "type": "nom",
+  "lemme": "окули́ст",
+  "fr": "ophtalmologue",
+  "frVariantes": [],
+  "genre": "m",
+  "anime": true,
+  "categorie": "personnes",
+  "irregularite": null,
+  "sg": [
+   "окули́ст",
+   "окули́ста",
+   "окули́сту",
+   "окули́ста",
+   "окули́стом",
+   "окули́сте"
+  ],
+  "pl": [
+   "окули́сты",
+   "окули́стов",
+   "окули́стам",
+   "окули́стов",
+   "окули́стами",
+   "окули́стах"
+  ],
+  "prep": null,
+  "loc2": null,
+  "bloc": 1,
+  "note": null,
+  "aValider": false,
+  "sourceProf": true,
+  "variantes": {},
+  "sousCategories": [
+   "acc_anime_sg",
+   "instr_sg_om",
+   "genpl_ov"
+  ]
+ },
+ {
+  "id": "lex_stomatolog",
+  "type": "nom",
+  "lemme": "стомато́лог",
+  "fr": "dentiste",
+  "frVariantes": [],
+  "genre": "m",
+  "anime": true,
+  "categorie": "personnes",
+  "irregularite": null,
+  "sg": [
+   "стомато́лог",
+   "стомато́лога",
+   "стомато́логу",
+   "стомато́лога",
+   "стомато́логом",
+   "стомато́логе"
+  ],
+  "pl": [
+   "стомато́логи",
+   "стомато́логов",
+   "стомато́логам",
+   "стомато́логов",
+   "стомато́логами",
+   "стомато́логах"
+  ],
+  "prep": null,
+  "loc2": null,
+  "bloc": 1,
+  "note": null,
+  "aValider": false,
+  "sourceProf": true,
+  "variantes": {},
+  "sousCategories": [
+   "prep_pl_ah",
+   "dat_pl_am",
+   "instr_pl_ami"
+  ]
+ },
+ {
   "id": "lex_instruktor",
   "type": "nom",
   "lemme": "инстру́ктор",
@@ -8420,9 +8498,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "acc_anime_sg",
-   "instr_sg_om",
-   "genpl_ov"
+   "acc_anime_pl",
+   "prep_sg_e",
+   "gen_sg_a"
   ]
  },
  {
@@ -8459,9 +8537,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_pl_ah",
-   "dat_pl_am",
-   "instr_pl_ami"
+   "dat_sg_u",
+   "acc_anime_sg",
+   "instr_sg_om"
   ]
  },
  {
@@ -8498,10 +8576,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "acc_anime_pl",
-   "prep_sg_e",
-   "gen_sg_a",
    "genpl_supplet",
+   "prep_pl_ah",
+   "dat_pl_am",
    "nom_pl_ya"
   ]
  },
@@ -8539,9 +8616,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_sg_e",
-   "acc_sg_f_u",
-   "instr_sg_oj"
+   "instr_pl_ami",
+   "acc_anime_pl",
+   "prep_sg_e"
   ]
  },
  {
@@ -8578,9 +8655,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "genpl_zero",
-   "prep_pl_ah",
-   "dat_pl_am"
+   "gen_sg_y",
+   "dat_sg_e",
+   "acc_sg_f_u"
   ]
  },
  {
@@ -8617,9 +8694,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_pl_ami",
-   "acc_anime_pl",
-   "prep_sg_e"
+   "instr_sg_oj",
+   "genpl_zero",
+   "prep_pl_ah"
   ]
  },
  {
@@ -8656,9 +8733,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "gen_sg_a",
-   "dat_sg_i",
-   "acc_sg_f_u",
+   "dat_pl_am",
+   "instr_pl_ami",
+   "acc_anime_pl",
    "genpl_voyelle_mobile"
   ]
  },
@@ -8696,9 +8773,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_sg_om",
-   "genpl_ov",
-   "prep_pl_ah",
+   "prep_sg_e",
+   "gen_sg_a",
+   "dat_sg_u",
    "nom_pl_ya"
   ]
  },
@@ -8736,9 +8813,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_pl_am",
-   "instr_pl_ami",
-   "acc_anime_pl",
+   "acc_anime_sg",
+   "instr_sg_om",
    "genpl_ej",
    "nom_pl_ya"
   ]
@@ -8777,13 +8853,14 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
+   "prep_pl_ah",
+   "dat_pl_am",
+   "instr_pl_mi",
    "prep_sg_i",
    "gen_sg_irreg",
-   "dat_sg_i",
    "acc_sg_f_zero",
    "instr_sg_ju",
-   "genpl_ej",
-   "instr_pl_mi"
+   "genpl_ej"
   ]
  },
  {
@@ -8820,11 +8897,12 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
+   "acc_anime_pl",
+   "prep_sg_i",
+   "gen_sg_irreg",
    "acc_sg_f_zero",
    "instr_sg_ju",
-   "genpl_ej",
-   "prep_sg_i",
-   "gen_sg_irreg"
+   "genpl_ej"
   ]
  },
  {
@@ -8861,11 +8939,12 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_pl_ah",
-   "dat_pl_am",
-   "instr_pl_mi",
+   "dat_sg_u",
+   "acc_anime_sg",
+   "instr_sg_om",
    "gen_sg_irreg",
    "genpl_supplet",
+   "instr_pl_mi",
    "nom_pl_supplet"
   ]
  },
@@ -8903,10 +8982,10 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "acc_anime_pl",
-   "prep_sg_e",
-   "gen_sg_irreg",
    "genpl_supplet",
+   "prep_pl_ah",
+   "dat_pl_am",
+   "gen_sg_irreg",
    "instr_pl_mi",
    "nom_pl_supplet"
   ]
@@ -8945,9 +9024,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_sg_e",
-   "acc_sg_f_u",
-   "instr_sg_oj",
+   "instr_pl_ami",
+   "acc_anime_pl",
+   "prep_sg_e",
    "genpl_voyelle_mobile"
   ]
  },
@@ -8985,9 +9064,10 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "genpl_voyelle_mobile",
-   "prep_pl_ah",
-   "dat_pl_am"
+   "gen_sg_i",
+   "dat_sg_e",
+   "acc_anime_sg",
+   "genpl_voyelle_mobile"
   ]
  },
  {
@@ -9017,9 +9097,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_pl_ami",
-   "acc_anime_pl",
-   "genpl_ej"
+   "genpl_ej",
+   "prep_pl_ah"
   ]
  },
  {
@@ -9056,9 +9135,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "gen_sg_a",
-   "dat_sg_u",
-   "acc_anime_sg",
+   "dat_pl_am",
+   "instr_pl_ami",
+   "acc_anime_pl",
    "genpl_ej",
    "nom_pl_ya"
   ]
@@ -9097,9 +9176,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_sg_om",
-   "genpl_zero",
-   "prep_pl_ah"
+   "prep_sg_e",
+   "gen_sg_a",
+   "dat_sg_i"
   ]
  },
  {
@@ -9136,9 +9215,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_pl_am",
-   "instr_pl_ami",
-   "acc_anime_pl",
+   "acc_sg_f_u",
+   "instr_sg_oj",
    "genpl_voyelle_mobile"
   ]
  },
@@ -9176,9 +9254,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e",
-   "gen_sg_a",
-   "dat_sg_i",
+   "prep_pl_ah",
+   "dat_pl_am",
+   "instr_pl_ami",
    "genpl_ej"
   ]
  },
@@ -9223,8 +9301,9 @@ const LEXIQUE = [
    ]
   },
   "sousCategories": [
-   "acc_sg_f_u",
-   "instr_sg_oj",
+   "acc_anime_pl",
+   "prep_sg_e",
+   "gen_sg_i",
    "genpl_ej"
   ]
  },
@@ -9262,9 +9341,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_pl_ah",
-   "dat_pl_am",
-   "instr_pl_ami"
+   "dat_sg_e",
+   "acc_sg_f_u",
+   "instr_sg_oj"
   ]
  },
  {
@@ -9301,10 +9380,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "acc_anime_pl",
-   "prep_sg_e",
-   "gen_sg_i",
-   "genpl_voyelle_mobile"
+   "genpl_voyelle_mobile",
+   "prep_pl_ah",
+   "dat_pl_am"
   ]
  },
  {
@@ -9341,9 +9419,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_sg_i",
-   "acc_anime_sg",
-   "instr_sg_om"
+   "instr_pl_ami",
+   "acc_anime_pl",
+   "prep_sg_e"
   ]
  },
  {
@@ -9380,9 +9458,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "genpl_zero",
-   "prep_pl_ah",
-   "dat_pl_am"
+   "gen_sg_i",
+   "dat_sg_e",
+   "acc_sg_f_u"
   ]
  },
  {
@@ -9419,8 +9497,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_pl_ami",
-   "prep_sg_e"
+   "instr_sg_om",
+   "genpl_zero",
+   "prep_pl_ah"
   ]
  },
  {
@@ -9457,9 +9536,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "gen_sg_a",
-   "dat_sg_i",
-   "acc_sg_f_u"
+   "dat_pl_am",
+   "instr_pl_ami"
   ]
  },
  {
@@ -9496,9 +9574,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_sg_om",
-   "genpl_ov",
-   "prep_pl_ah"
+   "prep_sg_e",
+   "gen_sg_a",
+   "dat_sg_u"
   ]
  },
  {
@@ -9535,8 +9613,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_pl_am",
-   "instr_pl_ami"
+   "acc_sg_f_u",
+   "instr_sg_om",
+   "genpl_zero"
   ]
  },
  {
@@ -9573,9 +9652,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e",
-   "gen_sg_a",
-   "dat_sg_u",
+   "prep_pl_ah",
+   "dat_pl_am",
+   "instr_pl_ami",
    "nom_pl_a"
   ]
  },
@@ -9606,7 +9685,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_sg_om"
+   "prep_sg_e",
+   "gen_sg_a"
   ]
  },
  {
@@ -9636,7 +9716,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e"
+   "dat_sg_u",
+   "instr_sg_om"
   ]
  },
  {
@@ -9666,8 +9747,7 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e",
-   "gen_sg_y"
+   "prep_sg_e"
   ]
  },
  {
@@ -9704,8 +9784,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_sg_u",
-   "instr_sg_om"
+   "instr_pl_ami",
+   "prep_sg_e"
   ]
  },
  {
@@ -9742,9 +9822,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "genpl_zero",
-   "prep_pl_ah",
-   "dat_pl_am"
+   "gen_sg_y",
+   "dat_sg_e",
+   "acc_sg_f_u"
   ]
  },
  {
@@ -9818,8 +9898,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "gen_sg_a",
-   "dat_sg_u"
+   "dat_pl_am",
+   "instr_pl_ami"
   ]
  },
  {
@@ -9856,9 +9936,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_sg_om",
-   "genpl_ov",
-   "prep_pl_ah"
+   "prep_sg_e",
+   "gen_sg_a",
+   "dat_sg_u"
   ]
  },
  {
@@ -9895,8 +9975,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_pl_am",
-   "instr_pl_ami"
+   "instr_sg_om",
+   "genpl_ov"
   ]
  },
  {
@@ -9933,9 +10013,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e",
-   "gen_sg_a",
-   "dat_sg_u",
+   "prep_pl_ah",
+   "dat_pl_am",
+   "instr_pl_ami",
    "nom_pl_a"
   ]
  },
@@ -9973,8 +10053,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "acc_sg_f_u",
-   "instr_sg_oj",
+   "prep_sg_e",
+   "gen_sg_i",
    "genpl_voyelle_mobile"
   ]
  },
@@ -10012,9 +10092,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_pl_ah",
-   "dat_pl_am",
-   "instr_pl_ami"
+   "dat_sg_u",
+   "instr_sg_om"
   ]
  },
  {
@@ -10051,8 +10130,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e",
-   "gen_sg_y"
+   "genpl_zero",
+   "prep_pl_ah",
+   "dat_pl_am"
   ]
  },
  {
@@ -10089,8 +10169,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_sg_u",
-   "instr_sg_om",
+   "instr_pl_ami",
+   "prep_sg_e",
    "gen_sg_irreg",
    "genpl_ej"
   ]
@@ -10129,9 +10209,10 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "genpl_voyelle_mobile",
-   "prep_pl_ah",
-   "dat_pl_am"
+   "gen_sg_i",
+   "dat_sg_e",
+   "acc_sg_f_u",
+   "genpl_voyelle_mobile"
   ]
  },
  {
@@ -10168,8 +10249,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_pl_ami",
-   "prep_sg_e"
+   "instr_sg_om",
+   "genpl_ov",
+   "prep_pl_ah"
   ]
  },
  {
@@ -10216,8 +10298,8 @@ const LEXIQUE = [
    ]
   },
   "sousCategories": [
-   "gen_sg_a",
-   "dat_sg_u",
+   "dat_pl_am",
+   "instr_pl_ami",
    "genpl_supplet"
   ]
  },
@@ -10255,9 +10337,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_sg_om",
-   "genpl_ov",
-   "prep_pl_ah"
+   "prep_sg_e",
+   "gen_sg_a",
+   "dat_sg_u"
   ]
  },
  {
@@ -10294,8 +10376,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_pl_am",
-   "instr_pl_ami"
+   "acc_sg_f_u",
+   "instr_sg_oj",
+   "genpl_zero"
   ]
  },
  {
@@ -10332,9 +10415,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e",
-   "gen_sg_y",
-   "dat_sg_e"
+   "prep_pl_ah",
+   "dat_pl_am",
+   "instr_pl_ami"
   ]
  },
  {
@@ -10371,8 +10454,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_sg_om",
-   "genpl_zero"
+   "prep_sg_e",
+   "gen_sg_a"
   ]
  },
  {
@@ -10409,9 +10492,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_pl_ah",
-   "dat_pl_am",
-   "instr_pl_ami",
+   "dat_sg_u",
+   "instr_sg_om",
    "nom_pl_a"
   ]
  },
@@ -10449,11 +10531,12 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
+   "genpl_ej",
+   "prep_pl_ah",
+   "dat_pl_am",
    "prep_sg_i",
-   "gen_sg_i",
    "acc_sg_f_zero",
-   "instr_sg_ju",
-   "genpl_ej"
+   "instr_sg_ju"
   ]
  },
  {
@@ -10490,9 +10573,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_sg_i",
-   "acc_sg_f_u",
-   "instr_sg_om"
+   "instr_pl_ami",
+   "prep_sg_e"
   ]
  },
  {
@@ -10529,9 +10611,10 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "genpl_voyelle_mobile",
-   "prep_pl_ah",
-   "dat_pl_am"
+   "gen_sg_a",
+   "dat_sg_i",
+   "acc_sg_f_u",
+   "genpl_voyelle_mobile"
   ]
  },
  {
@@ -10568,9 +10651,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_pl_ami",
-   "prep_sg_e",
-   "genpl_supplet"
+   "instr_sg_om",
+   "genpl_supplet",
+   "prep_pl_ah"
   ]
  },
  {
@@ -10600,10 +10683,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "gen_sg_i",
-   "dat_sg_i",
-   "acc_sg_f_zero",
    "prep_sg_i",
+   "acc_sg_f_zero",
    "instr_sg_ju"
   ]
  },
@@ -10641,9 +10722,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_sg_om",
-   "genpl_ov",
-   "prep_pl_ah",
+   "prep_sg_e",
+   "gen_sg_a",
+   "dat_sg_u",
    "nom_pl_a"
   ]
  },
@@ -10674,8 +10755,6 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_pl_am",
-   "instr_pl_ami",
    "genpl_voyelle_mobile"
   ]
  },
@@ -10706,6 +10785,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
+   "prep_pl_ah",
+   "dat_pl_am",
+   "instr_pl_ami",
    "genpl_voyelle_mobile"
   ]
  },
@@ -10743,8 +10825,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_sg_om",
-   "genpl_ov"
+   "prep_sg_e",
+   "gen_sg_a"
   ]
  },
  {
@@ -10781,9 +10863,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_pl_ah",
-   "dat_pl_am",
-   "instr_pl_ami"
+   "dat_sg_u",
+   "instr_sg_om"
   ]
  },
  {
@@ -10830,8 +10911,9 @@ const LEXIQUE = [
    ]
   },
   "sousCategories": [
-   "prep_sg_e",
-   "gen_sg_a"
+   "genpl_zero",
+   "prep_pl_ah",
+   "dat_pl_am"
   ]
  },
  {
@@ -10868,8 +10950,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_sg_i",
-   "instr_sg_om"
+   "instr_pl_ami",
+   "prep_sg_e"
   ]
  },
  {
@@ -10906,9 +10988,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "genpl_zero",
-   "prep_pl_ah",
-   "dat_pl_am"
+   "gen_sg_y",
+   "dat_sg_e",
+   "acc_sg_f_u"
   ]
  },
  {
@@ -10945,8 +11027,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_pl_ami",
-   "prep_sg_e"
+   "instr_sg_oj",
+   "genpl_zero",
+   "prep_pl_ah"
   ]
  },
  {
@@ -10983,8 +11066,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "gen_sg_a",
-   "dat_sg_u",
+   "dat_pl_am",
+   "instr_pl_ami",
    "genpl_ij",
    "nom_pl_ya"
   ]
@@ -11016,8 +11099,7 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "genpl_voyelle_mobile",
-   "prep_pl_ah"
+   "genpl_voyelle_mobile"
   ]
  },
  {
@@ -11054,8 +11136,7 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_pl_am",
-   "instr_pl_ami",
+   "instr_sg_om",
    "genpl_ej"
   ]
  },
@@ -11093,9 +11174,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e",
-   "gen_sg_a",
-   "dat_sg_i",
+   "prep_pl_ah",
+   "dat_pl_am",
+   "instr_pl_ami",
    "genpl_ej"
   ]
  },
@@ -11133,8 +11214,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_sg_om",
-   "genpl_ov"
+   "prep_sg_e",
+   "gen_sg_a"
   ]
  },
  {
@@ -11171,9 +11252,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_pl_ah",
-   "dat_pl_am",
-   "instr_pl_ami",
+   "dat_sg_u",
+   "instr_sg_om",
    "genpl_ej"
   ]
  },
@@ -11211,8 +11291,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e",
-   "gen_sg_a"
+   "genpl_ov",
+   "prep_pl_ah",
+   "dat_pl_am"
   ]
  },
  {
@@ -11249,8 +11330,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_sg_u",
-   "instr_sg_om",
+   "instr_pl_ami",
+   "prep_sg_e",
    "genpl_ej"
   ]
  },
@@ -11288,9 +11369,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "genpl_ej",
-   "prep_pl_ah",
-   "dat_pl_am"
+   "gen_sg_a",
+   "dat_sg_u",
+   "genpl_ej"
   ]
  },
  {
@@ -11327,8 +11408,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_pl_ami",
-   "prep_sg_e"
+   "instr_sg_om",
+   "genpl_ov",
+   "prep_pl_ah"
   ]
  },
  {
@@ -11365,8 +11447,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "gen_sg_a",
-   "dat_sg_i",
+   "dat_pl_am",
+   "instr_pl_ami",
    "genpl_ej"
   ]
  },
@@ -11404,9 +11486,10 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_sg_om",
-   "genpl_ej",
-   "prep_pl_ah"
+   "prep_sg_e",
+   "gen_sg_a",
+   "dat_sg_i",
+   "genpl_ej"
   ]
  },
  {
@@ -11443,8 +11526,7 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_pl_am",
-   "instr_pl_ami",
+   "instr_sg_om",
    "genpl_ej"
   ]
  },
@@ -11482,9 +11564,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e",
-   "gen_sg_a",
-   "dat_sg_i",
+   "prep_pl_ah",
+   "dat_pl_am",
+   "instr_pl_ami",
    "genpl_ej"
   ]
  },
@@ -11522,8 +11604,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_sg_om",
-   "genpl_ov"
+   "prep_sg_e",
+   "gen_sg_a"
   ]
  },
  {
@@ -11560,9 +11642,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_pl_ah",
-   "dat_pl_am",
-   "instr_pl_ami"
+   "dat_sg_u",
+   "instr_sg_om"
   ]
  },
  {
@@ -11599,8 +11680,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e",
-   "gen_sg_y"
+   "genpl_zero",
+   "prep_pl_ah",
+   "dat_pl_am"
   ]
  },
  {
@@ -11637,8 +11719,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_sg_u",
-   "instr_sg_om"
+   "instr_pl_ami",
+   "prep_sg_e"
   ]
  },
  {
@@ -11668,7 +11750,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e"
+   "gen_sg_i",
+   "dat_sg_e",
+   "acc_sg_f_u"
   ]
  },
  {
@@ -11705,8 +11789,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_pl_ami",
-   "prep_sg_e"
+   "instr_sg_om",
+   "genpl_ov",
+   "prep_pl_ah"
   ]
  },
  {
@@ -11736,6 +11821,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
+   "dat_pl_am",
+   "instr_pl_ami",
    "genpl_voyelle_mobile"
   ]
  },
@@ -11773,9 +11860,10 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_sg_om",
-   "genpl_ej",
-   "prep_pl_ah"
+   "prep_sg_e",
+   "gen_sg_a",
+   "dat_sg_i",
+   "genpl_ej"
   ]
  },
  {
@@ -11812,8 +11900,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_pl_am",
-   "instr_pl_ami"
+   "instr_sg_om",
+   "genpl_ov"
   ]
  },
  {
@@ -11850,9 +11938,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e",
-   "gen_sg_a",
-   "dat_sg_u"
+   "prep_pl_ah",
+   "dat_pl_am",
+   "instr_pl_ami"
   ]
  },
  {
@@ -11926,9 +12014,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_pl_ah",
-   "dat_pl_am",
-   "instr_pl_ami",
+   "dat_sg_i",
+   "acc_sg_f_u",
+   "instr_sg_om",
    "prep_sg_i",
    "gen_sg_irreg",
    "genpl_voyelle_mobile",
@@ -11969,9 +12057,11 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
+   "genpl_voyelle_mobile",
+   "prep_pl_ah",
+   "dat_pl_am",
    "prep_sg_i",
    "gen_sg_irreg",
-   "genpl_voyelle_mobile",
    "nom_pl_a"
   ]
  },
@@ -12009,8 +12099,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_sg_u",
-   "instr_sg_om",
+   "instr_pl_ami",
+   "prep_sg_e",
    "nom_pl_ya"
   ]
  },
@@ -12048,9 +12138,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "genpl_zero",
-   "prep_pl_ah",
-   "dat_pl_am"
+   "gen_sg_y",
+   "dat_sg_e",
+   "acc_sg_f_u"
   ]
  },
  {
@@ -12087,11 +12177,12 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_pl_ami",
+   "instr_sg_oj",
+   "genpl_ij",
+   "prep_pl_ah",
    "prep_sg_ii",
    "gen_sg_ii",
-   "dat_sg_ii",
-   "genpl_ij"
+   "dat_sg_ii"
   ]
  },
  {
@@ -12128,8 +12219,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "gen_sg_a",
-   "dat_sg_i"
+   "dat_pl_am",
+   "instr_pl_ami"
   ]
  },
  {
@@ -12166,12 +12257,10 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_sg_oj",
-   "genpl_ij",
-   "prep_pl_ah",
    "prep_sg_ii",
    "gen_sg_ii",
-   "dat_sg_ii"
+   "dat_sg_ii",
+   "genpl_ij"
   ]
  },
  {
@@ -12201,7 +12290,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e"
+   "acc_sg_f_u",
+   "instr_sg_oj"
   ]
  },
  {
@@ -12263,8 +12353,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "acc_sg_f_u",
-   "instr_sg_oj"
+   "prep_sg_e",
+   "gen_sg_y"
   ]
  },
  {
@@ -12294,7 +12384,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e"
+   "dat_sg_e",
+   "acc_sg_f_u",
+   "instr_sg_oj"
   ]
  },
  {
@@ -12356,9 +12448,7 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_sg_e",
-   "acc_sg_f_u",
-   "instr_sg_oj"
+   "prep_sg_e"
   ]
  },
  {
@@ -12388,9 +12478,10 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_ii",
    "gen_sg_ii",
-   "dat_sg_ii"
+   "dat_sg_ii",
+   "acc_sg_f_u",
+   "prep_sg_ii"
   ]
  },
  {
@@ -12420,7 +12511,7 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e"
+   "instr_sg_oj"
   ]
  },
  {
@@ -12450,10 +12541,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
+   "prep_sg_ii",
    "gen_sg_ii",
-   "dat_sg_ii",
-   "acc_sg_f_u",
-   "prep_sg_ii"
+   "dat_sg_ii"
   ]
  },
  {
@@ -12490,9 +12580,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_sg_om",
-   "genpl_ov",
-   "prep_pl_ah"
+   "prep_sg_e",
+   "gen_sg_a",
+   "dat_sg_u"
   ]
  },
  {
@@ -12529,8 +12619,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_pl_am",
-   "instr_pl_ami"
+   "instr_sg_om",
+   "genpl_ov"
   ]
  },
  {
@@ -12567,9 +12657,10 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
+   "prep_pl_ah",
+   "dat_pl_am",
+   "instr_pl_ami",
    "prep_sg_i",
-   "gen_sg_i",
-   "dat_sg_i",
    "acc_sg_f_zero",
    "instr_sg_ju",
    "genpl_ej"
@@ -12602,8 +12693,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "acc_sg_f_u",
-   "instr_sg_oj"
+   "prep_sg_e",
+   "gen_sg_i"
   ]
  },
  {
@@ -12640,9 +12731,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_pl_ah",
-   "dat_pl_am",
-   "instr_pl_ami"
+   "dat_sg_u",
+   "instr_sg_om"
   ]
  },
  {
@@ -12672,8 +12762,7 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e",
-   "gen_sg_i"
+   "prep_sg_e"
   ]
  },
  {
@@ -12710,8 +12799,7 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "dat_sg_u",
-   "instr_sg_om",
+   "instr_pl_ami",
    "prep_sg_ii"
   ]
  },
@@ -12749,9 +12837,10 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "genpl_voyelle_mobile",
-   "prep_pl_ah",
-   "dat_pl_am"
+   "gen_sg_i",
+   "dat_sg_e",
+   "acc_sg_f_u",
+   "genpl_voyelle_mobile"
   ]
  },
  {
@@ -12781,7 +12870,7 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e"
+   "instr_sg_oj"
   ]
  },
  {
@@ -12818,8 +12907,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "gen_sg_a",
-   "dat_sg_u"
+   "dat_pl_am",
+   "instr_pl_ami"
   ]
  },
  {
@@ -12856,9 +12945,9 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "instr_sg_om",
-   "genpl_ov",
-   "prep_pl_ah",
+   "prep_sg_e",
+   "gen_sg_a",
+   "dat_sg_u",
    "nom_pl_a"
   ]
  },
@@ -12889,6 +12978,8 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
+   "acc_sg_f_u",
+   "instr_sg_oj",
    "prep_sg_ii",
    "gen_sg_ii",
    "dat_sg_ii",
@@ -12922,9 +13013,6 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "prep_sg_e",
-   "gen_sg_a",
-   "dat_sg_u",
    "prep_v_na"
   ]
  },
@@ -12955,8 +13043,6 @@ const LEXIQUE = [
   "sourceProf": true,
   "variantes": {},
   "sousCategories": [
-   "acc_sg_f_u",
-   "instr_sg_oj",
    "prep_sg_ii",
    "gen_sg_ii",
    "dat_sg_ii",

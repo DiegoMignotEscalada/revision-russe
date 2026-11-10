@@ -1,6 +1,8 @@
-# Révision de russe — bloc 1
+# Révision de russe
 
-Outil personnel de mémorisation des six cas du russe, par répétition espacée.
+Outil personnel de mémorisation du russe, par répétition espacée : les six cas
+(bloc 1), verbes, pronoms, comparaison, négation, numéraux (bloc 2), verbes de
+mouvement à préfixe (bloc 3).
 Application web sans dépendance, installable sur Android, fonctionnant hors
 connexion. Interface entièrement en français ; le russe n'apparaît que comme
 contenu à apprendre.
@@ -21,8 +23,27 @@ ajouté** : il est sous droits d'auteur. `.gitignore` bloque tout fichier `.pdf`
   taux d'erreur est du bruit.
 - **Règles** — référence grammaticale complète du bloc, consultable à tout moment.
   Aucune règle n'est montrée avant une réponse pendant l'exercice.
-- **Installer** — instructions Android, état du service worker, export et import
-  JSON de la progression.
+- **Outils** — sauvegarde de la progression dans un fichier, restauration,
+  copie de secours, instructions Android, état du service worker.
+
+## Version 2 — novembre 2026
+
+Forme uniquement ; la répétition espacée et la correction sont inchangées.
+
+- **Sécurité.** Plus aucune requête vers un tiers : les polices sont dans
+  `polices/`. Politique de sécurité sans dérogation : les styles sont dans
+  `style.css`. L'import passe par le même assainissement que le chargement.
+  L'application refuse de s'afficher dans un cadre.
+- **Sauvegarde.** Export dans un fichier ou par la feuille de partage, import
+  depuis un fichier, copie de secours avant tout remplacement, rappel après
+  150 réponses sans sauvegarde, demande de stockage durable. Un état illisible
+  est mis de côté, jamais écrasé.
+- **Ergonomie.** « Commencer » en haut de l'écran, réglages repliés, barre
+  d'avancement, bouton « Je ne sais pas », séance reprenable après un
+  changement d'onglet, bilan de séance avec les cartes à revoir, lecture à voix
+  haute de la réponse, annonce d'une nouvelle version.
+- **Contenu.** Bloc 3 : 161 cartes sur les préfixes des verbes de mouvement,
+  accessibles par le raccourci « Dernier cours ».
 
 La correction est stricte : orthographe exacte, `ё` distinct de `е`, aucune
 tolérance à la faute de frappe. Les accents toniques sont affichés partout mais
@@ -46,12 +67,15 @@ python3 -m http.server 8000
 ## Structure
 
 ```
-index.html          structure et styles
+index.html          structure
+style.css           styles et déclaration des polices
+polices/            Spectral et JetBrains Mono, licence SIL OFL 1.1
 app.js              moteur : SRS, sessions, rendu, correction, statistiques
 data/lexique.js     noms et adjectifs, six cas, deux nombres
 data/bloc2.js       verbes, pronoms, comparaison, négation, numéraux
 data/grammaire.js   registre des sous-catégories et points de grammaire
 data/phrases.js     phrases en contexte
+data/bloc3.js       verbes de mouvement à préfixe
 sw.js               service worker
 manifest.json       manifeste PWA
 SPEC.md             spécification de référence
@@ -80,7 +104,14 @@ tools/tout-verifier.sh     lanceur unique de tous les contrôles
 INVARIANTS.md              ce qui doit être vrai, et par quel script
 SECURITE.md                audit de sécurité : surfaces, protections, décisions
 tools/audit-securite.js    injections, pollution de prototype, réseau, CSP
+tools/verifier-bloc3.py    bloc 3 : structure, accents, unicité, cohérence
+tools/essai-navigateur.js  vrai Chromium : écrans, sécurité, hors connexion, bloc 3
+tools/essai-corpus.js      vrai Chromium : chaque carte ratée puis rejouée juste
+tools/essai-migration.js   vrai Chromium : passage de la version en ligne à la suivante
 ```
+
+Seuls les quatre derniers scripts sont dans ce dépôt ; les autres n'y ont
+jamais été versés. Ils demandent Node et Playwright.
 
 ## Ajouter ou corriger du contenu
 
@@ -182,4 +213,6 @@ en texte brut.
 
 GitHub Pages, branche `main`, à la racine. Le service worker exige HTTPS ; sur
 GitHub Pages c'est le cas par défaut. Pour forcer le rechargement des fichiers
-après un déploiement, incrémenter `CACHE_VERSION` en tête de `sw.js`.
+après un déploiement, incrémenter `CACHE_VERSION` en tête de `sw.js`. Tout
+fichier ajouté à l'application doit aussi être ajouté à la liste `FICHIERS` du
+même fichier, sans quoi il manquera hors connexion.

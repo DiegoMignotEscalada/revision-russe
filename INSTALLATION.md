@@ -13,11 +13,14 @@ Trois familles de fichiers. Seule la première fait tourner l'application.
 
 | Fichier | Rôle |
 |---|---|
-| `index.html` | La page. Contient toute la mise en forme. |
+| `index.html` | La page. |
+| `style.css` | Toute la mise en forme. |
+| `polices/` | Dix fichiers de polices, servis par le site lui-même. |
 | `app.js` | Le moteur : sessions, correction, répétition espacée, statistiques. |
 | `data/lexique.js` | 344 noms et 44 adjectifs, avec leurs douze formes. |
 | `data/bloc2.js` | Verbes, pronoms, comparaison, négation, numéraux. |
 | `data/phrases.js` | 111 phrases en contexte. |
+| `data/bloc3.js` | Verbes de mouvement à préfixe : 161 cartes. |
 | `data/grammaire.js` | Les 22 points de grammaire et les 51 sous-catégories. |
 | `sw.js` | Le fichier qui permet le fonctionnement hors connexion. |
 | `manifest.json` | Ce qui rend l'application installable sur Android. |
@@ -140,7 +143,7 @@ Trois contrôles, dans l'ordre :
 1. **L'application s'affiche**, avec l'onglet Pratiquer et le bouton
    « Commencer ». Si vous obtenez une page blanche, attendez deux minutes de
    plus : la publication n'est pas immédiate.
-2. **Allez dans l'onglet Installer.** Sous « Mode hors connexion », le texte doit
+2. **Allez dans l'onglet Outils.** Sous « Mode hors connexion », le texte doit
    dire *Service worker actif : l'application fonctionne hors connexion*. C'est
    la confirmation que le fonctionnement sans réseau est en place. Si un message
    d'erreur s'affiche à la place, il en donne la raison — l'application ne le
@@ -296,3 +299,23 @@ la logique du moteur, ou traiter une série de signalements d'un coup. Le fichie
 rester vrai. Ces deux documents existent précisément pour que quelqu'un — vous,
 un développeur, ou un assistant — puisse reprendre le travail sans repartir de
 zéro.
+
+---
+
+## Mettre à jour une application déjà en ligne
+
+1. Dans le dépôt GitHub, **Add file** puis **Upload files**.
+2. Faites glisser **tout le contenu** du nouveau dossier, dossiers `data`,
+   `icones`, `polices` et `tools` compris. Les fichiers de même nom sont
+   remplacés, les nouveaux s'ajoutent.
+3. **Un seul envoi, un seul « Commit changes ».** Envoyer les fichiers en
+   plusieurs fois laisse en ligne, entre deux envois, un mélange d'ancienne et
+   de nouvelle version.
+4. Attendez deux minutes. Sur le téléphone, ouvrez l'application, fermez-la,
+   rouvrez-la : la première ouverture télécharge la nouvelle version, la seconde
+   l'affiche. Ensuite, un bandeau « Une nouvelle version a été téléchargée »
+   proposera de recharger à chaque mise à jour.
+5. Onglet **Outils** : la ligne « Version » doit indiquer la nouvelle version.
+
+La progression enregistrée sur le téléphone n'est pas touchée par une mise à
+jour. Par précaution, faites une sauvegarde depuis l'onglet Outils avant.

@@ -1,8 +1,22 @@
-/* Révision de russe — bloc 1. Moteur.
+/* Révision de russe. Moteur.
    Aucune dépendance. Les données viennent de data/*.js et ne sont jamais
    modifiées ici. Ordre des cases partout : N G D A I P. */
 (function () {
 'use strict';
+
+var VERSION = '2.0 — novembre 2026';
+
+/* L'application refuse de s'afficher dans un cadre : un site tiers ne peut
+   donc pas la superposer à autre chose pour détourner des appuis. La
+   politique de sécurité déclarée dans la page ne sait pas l'interdire quand
+   elle est posée par une balise, d'où ce contrôle. */
+try {
+  if (window.top !== window.self) {
+    document.body.textContent =
+      'Cette application ne s\u2019affiche pas dans un cadre.';
+    return;
+  }
+} catch (errCadre) { return; }
 
 /* ------------------------------------------------ contrôle de démarrage ----
    Si un fichier de données n'a pas été servi, la variable globale
@@ -30,12 +44,12 @@ function echSimple(s) {
   var vue = document.getElementById('vue');
   if (!vue) return;
   vue.innerHTML =
-    '<div class="carte"><h3 style="color:#e05c5c">Fichiers de données ' +
+    '<div class="carte"><h3 class="erreur">Fichiers de données ' +
     'introuvables</h3><p>L\u2019application ne peut pas démarrer : ' +
     manquants.length + ' fichier' + (manquants.length > 1 ? 's' : '') +
     (manquants.length > 1 ? ' n\u2019ont' : ' n\u2019a') +
     ' pas été chargé' + (manquants.length > 1 ? 's' : '') +
-    '.</p><ul style="padding-left:20px">' +
+    '.</p><ul class="liste">' +
     manquants.map(function (r) {
       return '<li><code>' + echSimple(r.fichier) + '</code></li>';
     }).join('') +
@@ -56,18 +70,26 @@ function echSimple(s) {
 })();
 
 var CLE = 'revision-russe-v1';
+/* Copie de l'état remplacé par un import ou un effacement, et copie d'un état
+   que l'application n'a pas su relire. Déclarées ICI, avant le premier
+   chargement : une constante déclarée plus bas dans le fichier n'a pas encore
+   de valeur quand `charger()` s'exécute. */
+var CLE_SECOURS = CLE + '-secours';
+var CLE_ILLISIBLE = CLE + '-illisible';
+var CLES_INTERDITES = ['__proto__', 'constructor', 'prototype'];
+var TAILLE_MAX_IMPORT = 5 * 1024 * 1024;
 var INTERVALLE_MAX = 365 * 5;   /* borne de sûreté, cinq ans */
 var ACC = '\u0301';
 var CAS = ['nom', 'gen', 'dat', 'acc', 'instr', 'prep'];
 /* Thèmes de niveau 1 des statistiques et des filtres : les six cas du bloc 1,
    puis les familles du bloc 2. */
-var THEMES = CAS.concat(['verbe', 'pronom', 'comparaison', 'negation',
-                         'numeral']);
+var THEMES = CAS.concat(['verbe', 'prefixe', 'pronom', 'comparaison',
+                         'negation', 'numeral']);
 var NOM_CAS = {
   nom: 'Nominatif', gen: 'Génitif', dat: 'Datif',
   acc: 'Accusatif', instr: 'Instrumental', prep: 'Prépositionnel',
-  verbe: 'Verbes', pronom: 'Pronoms', comparaison: 'Comparaison',
-  negation: 'Négation', numeral: 'Numéraux'
+  verbe: 'Verbes', prefixe: 'Préfixes de mouvement', pronom: 'Pronoms',
+  comparaison: 'Comparaison', negation: 'Négation', numeral: 'Numéraux'
 };
 var ABREV = ['nom', 'gén', 'dat', 'acc', 'instr', 'prép'];
 /* Ordre d'introduction imposé par SPEC §8.1 : prépositionnel, accusatif,
@@ -95,16 +117,36 @@ var SERIES_ADJ = [
    absence ne doit pas empêcher l'application de tourner : un dépôt qui n'a pas
    encore reçu data/bloc2.js reste utilisable sur le bloc 1 seul. */
 var LEX = LEXIQUE, PHR = PHRASES, GRAM = GRAMMAIRE;
-if (typeof BLOC2 !== 'undefined' && BLOC2) {
-  LEX = LEXIQUE.concat(BLOC2.items || []);
-  PHR = PHRASES.concat(BLOC2.phrases || []);
+/* Chaque bloc supplémentaire est facultatif et s'ajoute aux précédents. Le
+   dernier bloc qui porte un champ `meta` est présenté comme « dernier cours »
+   sur l'écran Pratiquer. */
+var BLOCS_SUP = [];
+if (typeof BLOC2 !== 'undefined' && BLOC2) BLOCS_SUP.push(BLOC2);
+if (typeof BLOC3 !== 'undefined' && BLOC3) BLOCS_SUP.push(BLOC3);
+var DERNIER_COURS = null;
+BLOCS_SUP.forEach(function (b) {
+  LEX = LEX.concat(b.items || []);
+  PHR = PHR.concat(b.phrases || []);
   GRAM = {
-    sous: GRAMMAIRE.sous.concat(BLOC2.sous || []),
-    points: GRAMMAIRE.points.concat(BLOC2.points || [])
+    sous: GRAM.sous.concat(b.sous || []),
+    points: GRAM.points.concat(b.points || [])
   };
-}
+  if (b.meta && typeof b.meta === 'object' && b.meta.theme) {
+    DERNIER_COURS = b.meta;
+  }
+});
+/* Un thème sans aucune sous-catégorie chargée n'est pas proposé : sans le
+   fichier du bloc correspondant, son filtre donnerait une séance vide. */
+THEMES = THEMES.filter(function (c) {
+  return CAS.indexOf(c) >= 0 ||
+    GRAM.sous.some(function (x) { return x.cas === c; });
+});
 
-var SOUS = {}, POINTS = {}, ITEMS = {}, PAR_LEMME = {}, PAR_FORME = {};
+/* Tables sans prototype : une clé comme « constructor » ou « __proto__ »,
+   venue d'un état importé, ne doit jamais y trouver une propriété héritée. */
+function table() { return Object.create(null); }
+var SOUS = table(), POINTS = table(), ITEMS = table(), PAR_LEMME = table(),
+    PAR_FORME = table();
 GRAM.sous.forEach(function (s) { SOUS[s.id] = s; });
 GRAM.points.forEach(function (p) { POINTS[p.id] = p; });
 LEX.forEach(function (it) {
@@ -144,7 +186,7 @@ LEX.forEach(function (it) {
 PHR.forEach(function (p) {
   CARTES.push({ id: p.id, itemId: p.id, sous: p.sousCategorie, kind: 'phrase' });
 });
-var PAR_ID = {};
+var PAR_ID = table();
 CARTES.forEach(function (c) { PAR_ID[c.id] = c; });
 
 /* ------------------------------------------- ordre d'introduction ----------
@@ -170,15 +212,19 @@ CARTES.forEach(function (c) { PAR_ID[c.id] = c; });
    travaillé. La liste est alors tournée à partir du sujet choisi, les autres
    suivant dans le même ordre relatif. */
 var SUJETS = ['prep', 'acc', 'dat', 'instr', 'gen', 'nom', 'genpl',
-              'verbe', 'pronom', 'divers'];
+              'verbe', 'prefixe', 'pronom', 'divers'];
 var NOM_SUJET = {
   prep: 'Prépositionnel', acc: 'Accusatif', dat: 'Datif',
   instr: 'Instrumental', gen: 'Génitif singulier', nom: 'Pluriels du nominatif',
-  genpl: 'Génitif pluriel', verbe: 'Verbes', pronom: 'Pronoms',
+  genpl: 'Génitif pluriel', verbe: 'Verbes',
+  prefixe: 'Préfixes de mouvement', pronom: 'Pronoms',
   divers: 'Comparaison, négation, nombres'
 };
-var PRIORITE_TYPE = { nom: 0, phrase: 1, adjectif: 2 };
-var ORDRE_FICHIER = {};
+/* `flexion` manquait : la comparaison rendait alors « non numérique » pour
+   les verbes et les pronoms, et leur ordre d'introduction dépendait du
+   navigateur. Les formes passent avant les phrases, comme pour les noms. */
+var PRIORITE_TYPE = { nom: 0, flexion: 0, phrase: 1, adjectif: 2 };
+var ORDRE_FICHIER = table();
 LEX.forEach(function (it, i) { ORDRE_FICHIER[it.id] = i; });
 PHR.forEach(function (p, i) { ORDRE_FICHIER[p.id] = i; });
 
@@ -269,6 +315,10 @@ function jour() { return 86400000; }
 
 /* ------------------------------------------------------------------- l'état */
 
+/* Ces deux témoins sont lus et écrits par charger() et sauver(), appelés à la
+   ligne suivante : ils doivent avoir leur valeur avant. */
+var etatIllisible = false;
+var sauvegardeKO = null;
 var etat = charger();
 nettoyerEtats();
 preparerIntroduction(etat.reglages.depart, etat.reglages.bloc);
@@ -294,7 +344,11 @@ function nettoyerEtats() {
 function neuf() {
   return {
     v: 1, etats: {}, sous: {}, signalements: [],
-    reglages: reglagesParDefaut()
+    reglages: reglagesParDefaut(),
+    /* dernierExport : date de la dernière sauvegarde sortie du téléphone ;
+       reponses : nombre de réponses données depuis. Sert au seul rappel de
+       sauvegarde. */
+    meta: { dernierExport: 0, reponses: 0 }
   };
 }
 function reglagesParDefaut() {
@@ -340,10 +394,17 @@ function assainir(e) {
     bloc: Math.round(nombre(r.bloc, 60, 10, 400))
   };
 
+  var m = (e.meta && typeof e.meta === 'object' && !Array.isArray(e.meta))
+    ? e.meta : {};
+  out.meta = {
+    dernierExport: nombre(m.dernierExport, 0, 0, Date.now() + 86400000),
+    reponses: Math.round(nombre(m.reponses, 0, 0, 1e7))
+  };
+
   var etats = (e.etats && typeof e.etats === 'object' && !Array.isArray(e.etats))
     ? e.etats : {};
   Object.keys(etats).forEach(function (cle) {
-    if (!cle) return;
+    if (!cle || CLES_INTERDITES.indexOf(cle) >= 0) return;
     var x = etats[cle];
     if (!x || typeof x !== 'object') return;
     /* Une échéance hors domaine est ramenée à zéro, donc à « échue », et non
@@ -369,6 +430,7 @@ function assainir(e) {
   var sous = (e.sous && typeof e.sous === 'object' && !Array.isArray(e.sous))
     ? e.sous : {};
   Object.keys(sous).forEach(function (cle) {
+    if (CLES_INTERDITES.indexOf(cle) >= 0) return;
     var x = sous[cle];
     if (!x || typeof x !== 'object') return;
     out.sous[cle] = {
@@ -399,19 +461,25 @@ function assainir(e) {
 }
 
 function charger() {
+  var brut = null;
   try {
-    var brut = localStorage.getItem(CLE);
+    brut = localStorage.getItem(CLE);
     if (!brut) return neuf();
     return assainir(JSON.parse(brut));
   } catch (err) {
     console.warn('État illisible, remis à neuf', err && err.message);
+    /* L'état remis à neuf va être réécrit par-dessus l'ancien. Ce qui n'a pas
+       pu être relu est donc mis de côté d'abord : une erreur de lecture, quelle
+       qu'en soit la cause, ne doit jamais détruire une progression. */
+    try {
+      if (brut) { localStorage.setItem(CLE_ILLISIBLE, brut); etatIllisible = true; }
+    } catch (err2) { /* stockage plein : rien de plus à tenter */ }
     return neuf();
   }
 }
 
 /* Une écriture qui échoue en silence, c'est une progression perdue sans que
    l'utilisateur le sache. Le motif est retenu et affiché. */
-var sauvegardeKO = null;
 function sauver() {
   try {
     localStorage.setItem(CLE, JSON.stringify(etat));
@@ -428,6 +496,12 @@ function sauver() {
 function avertirSauvegarde() {
   var z = el('bandeau');
   if (!z) return;
+  if (!sauvegardeKO && etatIllisible) {
+    z.innerHTML = '<div class="alerte">La progression enregistrée n\u2019a pas ' +
+      'pu être relue. Elle n\u2019est pas perdue : elle a été mise de côté. ' +
+      'Ouvrez l\u2019onglet Outils pour tenter de la rétablir.</div>';
+    return;
+  }
   if (!sauvegardeKO) { z.innerHTML = ''; return; }
   z.innerHTML = '<div class="alerte">La progression ne peut pas être ' +
     'enregistrée (' + ech(sauvegardeKO) + '). Les réponses de cette session ' +
@@ -660,7 +734,9 @@ function question(carte) {
     /* Pas de reconnaissance sur un item en série : sa glose nomme la série
        entière, pas la forme affichée. « Traduisez никуда́ не » attendrait
        « Négations en ни- », ce qui n'a pas de sens. */
-    if (vu && !it.serie && Math.random() < 0.25) q.sens = 'reconnaissance';
+    if (vu && !it.serie && !it.sansReconnaissance && Math.random() < 0.25) {
+      q.sens = 'reconnaissance';
+    }
     return q;
   }
   if (s.genre === 'adj') {
@@ -702,18 +778,42 @@ var sess = null;
 function lancerSession(cartes) {
   var liste = cartes || construireSession();
   if (!liste.length) {
+    sess = null;
     rendre('pratiquer');
     var z = document.createElement('div');
     z.className = 'carte';
-    z.innerHTML = '<h3>Rien à faire pour l\u2019instant</h3><div class="question">' +
-      'Aucune carte n\u2019est échue et le quota de nouvelles cartes est à zéro. ' +
+    z.innerHTML = '<h3>Rien à faire pour l’instant</h3><div class="question">' +
+      'Aucune carte n’est échue et le quota de nouvelles cartes est à zéro. ' +
       'Augmentez le curseur, décochez « révisions uniquement », ou élargissez ' +
       'les filtres.</div>';
     el('vue').insertBefore(z, el('vue').firstChild);
     return;
   }
-  sess = { liste: liste, i: 0, perf: [], q: null, phase: 'question' };
+  sess = { liste: liste, i: 0, perf: [], rates: [], q: null, phase: 'question' };
   afficherQuestion();
+}
+/* Une séance interrompue par un changement d'onglet n'est plus perdue : elle
+   reste en mémoire et l'écran Pratiquer propose de la reprendre. Les réponses
+   déjà données étaient de toute façon enregistrées ; ce qui se perdait, c'était
+   la suite de la file. */
+function reprendreSession() {
+  if (!sess) { rendre('pratiquer'); return; }
+  if (sess.phase === 'retour') { sess.i += 1; afficherQuestion(); return; }
+  if (sess.q) { dessinerExercice(); return; }
+  afficherQuestion();
+}
+/* Les largeurs de jauge sont posées par le script, jamais écrites dans le
+   HTML : la politique de sécurité de la page refuse tout attribut style. */
+function poserLargeurs() {
+  Array.prototype.forEach.call(document.querySelectorAll('[data-pct]'),
+    function (n) {
+      n.style.width = nombre(n.getAttribute('data-pct'), 0, 0, 100) + '%';
+    });
+}
+function choixComplets(q) {
+  return (q.choix || []).some(function (x) {
+    return normaliser(x) === normaliser(q.attendu);
+  });
 }
 function afficherQuestion() {
   while (sess.i < sess.liste.length) {
@@ -726,6 +826,8 @@ function afficherQuestion() {
 
 function dessinerExercice() {
   var q = sess.q, it = q.item, h = [];
+  h.push('<div class="avance" aria-hidden="true"><i data-pct="' +
+    Math.round(100 * sess.i / sess.liste.length) + '"></i></div>');
   h.push('<div class="carte entree">');
   h.push('<div class="consigne">' + ech(consigne(q)) + '</div>');
 
@@ -754,7 +856,7 @@ function dessinerExercice() {
         : '') + '</div>');
   } else {
     h.push('<div class="invite">' + ech(it.fr) +
-      (it.precision ? ' <span class="dim" style="font-size:16px">— ' +
+      (it.precision ? ' <span class="precision">— ' +
         ech(it.precision) + '</span>' : '') + '</div>');
     h.push('<div class="question"><span class="ru">' + ech(it.lemme) +
       '</span> &rarr; ' + ech(q.libelleCase) + '</div>');
@@ -762,26 +864,37 @@ function dessinerExercice() {
   h.push(badges(it));
 
   if (q.sens === 'boutons') {
-    h.push('<div class="ligne">' + q.choix.map(function (c) {
-      return '<button data-choix="' + ech(c) + '" class="ru">' + ech(c) + '</button>';
-    }).join('') + '</div>');
+    /* Trois choix, ou des formes longues, ne tiennent pas côte à côte sur un
+       téléphone : ils s'empilent. */
+    var empile = q.choix.length > 2 || q.choix.join('').length > 22;
+    h.push('<div class="ligne' + (empile ? ' colonne' : '') + '">' +
+      q.choix.map(function (c) {
+        return '<button data-choix="' + ech(c) + '" class="ru">' + ech(c) +
+          '</button>';
+      }).join('') + '</div>');
   } else {
     h.push('<input type="text" id="saisie" autocomplete="off" autocapitalize="off" ' +
-      'autocorrect="off" spellcheck="false" inputmode="text" ' +
+      'autocorrect="off" spellcheck="false" inputmode="text" enterkeyhint="done" ' +
+      'aria-label="Votre réponse" ' +
       (q.sens === 'reconnaissance' ? 'lang="fr"' : 'lang="ru"') + '>');
-    h.push('<div style="height:8px"></div>');
+    h.push('<div class="e8"></div>');
     h.push('<button class="primaire" id="valider">Valider</button>');
+    h.push('<div class="e8"></div>');
+    h.push('<button class="petit plein discret" id="nesaispas">Je ne sais pas' +
+      '</button>');
   }
   h.push('</div>');
   h.push('<div class="ligne"><span class="mono dim">' + (sess.i + 1) + ' / ' +
-    sess.liste.length + '</span><div class="pastilles" style="justify-content:flex-end">' +
+    sess.liste.length + '</span><div class="pastilles">' +
     sess.perf.slice(-10).map(function (p) {
       return '<span class="pastille ' + (p ? 'ok' : 'ko') + '"></span>';
     }).join('') + '</div></div>');
-  h.push('<div style="height:10px"></div>');
-  h.push('<button class="petit plein" id="abandon">Terminer la session</button>');
+  h.push('<div class="e10"></div>');
+  h.push('<button class="petit plein discret" id="abandon">Terminer la session' +
+    '</button>');
 
   el('vue').innerHTML = h.join('');
+  poserLargeurs();
   var champ = el('saisie');
   if (champ) {
     champ.focus();
@@ -789,19 +902,19 @@ function dessinerExercice() {
       if (ev.key === 'Enter') { ev.preventDefault(); repondre(champ.value); }
     });
     el('valider').addEventListener('click', function () { repondre(champ.value); });
+    /* « Je ne sais pas » compte comme un échec, exactement comme une saisie
+       vide validée : seule la manière de le dire change. */
+    el('nesaispas').addEventListener('click', function () { repondre(''); });
   }
   Array.prototype.forEach.call(document.querySelectorAll('[data-choix]'),
     function (b) {
       b.addEventListener('click', function () {
         var v = b.getAttribute('data-choix');
-        /* Deux familles de choix binaires. Pour в/на, le bouton ne porte que
-           la préposition et le reste de la réponse est complété. Pour
-           l'aspect ou les verbes de mouvement, le bouton porte la réponse
+        /* Deux familles de choix. Pour в/на, le bouton ne porte que la
+           préposition et le reste de la réponse est complété. Pour l'aspect,
+           les verbes de mouvement ou les préfixes, le bouton porte la réponse
            entière. On distingue par le contenu de la liste. */
-        var complet = (sess.q.choix || []).some(function (x) {
-          return normaliser(x) === normaliser(sess.q.attendu);
-        });
-        repondre(complet ? v : v + ' ' +
+        repondre(choixComplets(sess.q) ? v : v + ' ' +
           sansAcc(sess.q.attendu).split(' ').slice(1).join(' '));
       });
     });
@@ -809,10 +922,15 @@ function dessinerExercice() {
 }
 
 function consigne(q) {
-  if (q.sens === 'reconnaissance') return 'Reconnaissance';
-  if (q.genre === 'choix' || (q.item.type === 'phrase' && q.choix)) {
+  if (q.sens === 'reconnaissance') return 'Reconnaissance — répondez en français';
+  /* « В ou НА ? » ne vaut que pour les cartes de préposition. La version
+     précédente l'affichait aussi au-dessus d'un choix entre deux verbes. */
+  var preposition = q.genre === 'choix' ||
+    (q.item.type === 'phrase' && q.choix && !choixComplets(q));
+  if (preposition) {
     return q.sens === 'boutons' ? 'В ou НА ?' : 'Complétez : préposition et forme';
   }
+  if (q.sens === 'boutons') return 'Choisissez la bonne forme';
   if (q.genre === 'phrase') return 'Complétez la phrase';
   if (q.genre === 'indecl') return 'Indéclinable — donnez la forme';
   return 'Production';
@@ -824,7 +942,8 @@ function badges(it) {
        les négations et la comparaison sous « Pronoms » */
     var LIB_GROUPE = {
       mouvement: 'verbe de mouvement', aspect: 'aspect', reflexif: 'verbe en -ся',
-      pronom: 'pronom', negation: 'négation', comparaison: 'comparaison'
+      pronom: 'pronom', negation: 'négation', comparaison: 'comparaison',
+      prefixe: 'verbe à préfixe'
     };
     b.push('<span class="badge">' +
       ech(LIB_GROUPE[it.groupe] || it.groupe) + '</span>');
@@ -877,7 +996,13 @@ function repondre(saisie) {
   majSM2(e, reussi, uneLettre);
   majSous(q.carte.sous, reussi);
   sess.perf.push(reussi);
+  if (!reussi) {
+    sess.rates.push({ carte: q.carte, attendu: attenduAff,
+      mot: libelleCarte(q.carte.id).mot });
+  }
+  etat.meta.reponses += 1;
   sauver();
+  demanderPersistance();
 
   sess.phase = 'retour';
   dessinerRetour(reussi, donne, attenduAff, uneLettre);
@@ -934,12 +1059,26 @@ function distance1(a, b) {
 
 function dessinerRetour(reussi, donne, attendu, uneLettre) {
   var q = sess.q, it = q.item, h = [];
+  var dernier = sess.i >= sess.liste.length - 1;
+  /* Ce qui est lu à voix haute est toujours du russe : la phrase entière pour
+     une phrase, la forme pour une carte de forme — y compris en
+     reconnaissance, où la réponse attendue affichée est française. */
+  var aDire = it.type === 'phrase'
+    ? (it.avant || '') + it.reponse + (it.apres || '') : q.attendu;
+  h.push('<div class="avance" aria-hidden="true"><i data-pct="' +
+    Math.round(100 * (sess.i + 1) / sess.liste.length) + '"></i></div>');
   h.push('<div class="carte entree">');
   h.push('<div class="verdict ' + (reussi ? 'ok">Correct' : 'ko">Incorrect') +
     (uneLettre ? ' — un seul caractère' : '') + '</div>');
   h.push('<div class="reponse"><span class="ru ' +
     (q.sens === 'reconnaissance' ? '' : ech(it.type)) + '">' +
-    ech(attendu) + '</span></div>');
+    ech(attendu) + '</span>' +
+    (peutParler() ? '<button class="ecoute" id="ecouter" ' +
+      'aria-label="Écouter en russe">Écouter</button>' : '') + '</div>');
+  if (q.sens === 'reconnaissance') {
+    h.push('<div class="question"><span class="ru">' + ech(q.attendu) +
+      '</span></div>');
+  }
   if (q.genre === 'phrase' && it.type === 'phrase') {
     h.push('<div class="question">' + ech(it.avant) + '<b>' + ech(it.reponse) +
       '</b>' + ech(it.apres) + '</div>');
@@ -952,18 +1091,65 @@ function dessinerRetour(reussi, donne, attendu, uneLettre) {
   h.push(regle(q));
   if (it.note) h.push('<div class="question dim">' + ech(it.note) + '</div>');
   h.push('</div>');
-  h.push('<button class="primaire" id="suite">Suivant</button>');
-  h.push('<div style="height:8px"></div>');
-  h.push('<button class="petit plein" id="signaler">Signaler une erreur de contenu</button>');
+  h.push('<button class="primaire" id="suite">' +
+    (dernier ? 'Voir le bilan' : 'Suivant') + '</button>');
+  h.push('<div class="e8"></div>');
+  h.push('<button class="petit plein discret" id="signaler">Signaler une erreur ' +
+    'de contenu</button>');
   h.push('<div id="zone-signal"></div>');
 
   el('vue').innerHTML = h.join('');
-  el('suite').addEventListener('click', function () { sess.i += 1; afficherQuestion(); });
+  poserLargeurs();
+  el('suite').addEventListener('click', function () {
+    if (!sess || sess.phase !== 'retour') return;
+    sess.i += 1; afficherQuestion();
+  });
   el('suite').focus();
   el('signaler').addEventListener('click', ouvrirSignalement);
+  if (el('ecouter')) {
+    el('ecouter').addEventListener('click', function () { dire(aDire); });
+  }
   /* Pas d'écouteur clavier global ici : le bouton Suivant a le focus, et un
      appui sur Entrée déclenche déjà son clic. Un écouteur sur document ferait
      avancer deux fois, et s'accumulerait à chaque retour. */
+}
+
+/* -------------------------------------------------------- lecture à voix haute
+   Synthèse vocale du téléphone, quand elle existe. Rien ne sort de l'appareil
+   par ce moyen côté application ; la voix utilisée est celle installée dans
+   Android. Sans voix russe installée, le bouton n'est pas proposé. */
+function voixRusse() {
+  try {
+    var v = window.speechSynthesis.getVoices() || [];
+    for (var i = 0; i < v.length; i += 1) {
+      if (/^ru/i.test(v[i].lang || '')) return v[i];
+    }
+  } catch (err) { /* liste indisponible : on laissera le système choisir */ }
+  return null;
+}
+function peutParler() {
+  if (typeof window.speechSynthesis === 'undefined' ||
+      typeof window.SpeechSynthesisUtterance === 'undefined') return false;
+  try {
+    var v = window.speechSynthesis.getVoices() || [];
+    /* Liste vide : le navigateur ne l'a pas encore chargée, on propose quand
+       même. Liste pleine sans voix russe : le texte serait lu avec une voix
+       française, ce qui est pire que rien. */
+    return !v.length || !!voixRusse();
+  } catch (err) { return false; }
+}
+function dire(texte) {
+  try {
+    window.speechSynthesis.cancel();
+    var u = new window.SpeechSynthesisUtterance(sansAcc(texte));
+    u.lang = 'ru-RU';
+    u.rate = 0.85;
+    var v = voixRusse();
+    if (v) u.voice = v;
+    window.speechSynthesis.speak(u);
+  } catch (err) {
+    console.warn('Lecture impossible', err && err.message);
+  }
 }
 
 function comparatif(donne, attendu) {
@@ -999,6 +1185,13 @@ function comparatif(donne, attendu) {
 
 function itemPorteur(q) {
   if (q.item.type !== 'phrase') return q.item;
+  /* Une phrase peut désigner elle-même l'item dont la grille doit s'afficher :
+     c'est le cas des verbes à préfixe, où l'indice nomme le verbe de base et
+     non la série préfixée. */
+  if (q.item.porteur && ITEMS[q.item.porteur] &&
+      ITEMS[q.item.porteur].type !== 'phrase') {
+    return ITEMS[q.item.porteur];
+  }
   var ind = q.item.indice ? sansAcc(q.item.indice).toLowerCase() : '';
   if (PAR_LEMME[ind]) return PAR_LEMME[ind];
   /* l'indice peut nommer une paire ou une liste : « идти́ / ходи́ть »,
@@ -1047,7 +1240,8 @@ function paradigme(q) {
   return grilleNom(it, q);
 }
 function grilleFlexion(it, q) {
-  var vise = q.caseVisee && q.caseVisee.cle;
+  var vise = (q.caseVisee && q.caseVisee.cle) ||
+    (q.item.type === 'phrase' && q.item.cellule) || null;
   if (!vise) {
     /* phrase rattachée à un item de flexion : on retrouve la cellule par la
        réponse attendue */
@@ -1056,7 +1250,7 @@ function grilleFlexion(it, q) {
       if (normaliser(c.forme) === dernier) vise = c.cle;
     });
   }
-  var h = ['<table class="para">'];
+  var h = ['<table class="para' + (it.serie ? ' serie' : '') + '">'];
   (it.cellules || []).forEach(function (c) {
     h.push('<tr><td class="cas">' + ech(c.libelle) + '</td><td class="' +
       (c.cle === vise ? 'vise ' : '') + 'ru">' + ech(c.forme) + '</td></tr>');
@@ -1081,6 +1275,13 @@ function caseCiblee(it, q) {
      puis la ligne du cas de la sous-catégorie, puis le reste. */
   var s = SOUS[q.carte.sous];
   var prio = s ? CAS.indexOf(s.cas) : -1;
+  /* Une phrase peut nommer sa case : hors des six thèmes de cas, rien ne dit
+     sinon quelle ligne surligner, et го́рода (génitif singulier) serait pris
+     pour города́ (nominatif pluriel). */
+  if (q.item.type === 'phrase' && q.item.vise &&
+      typeof q.item.vise.idx === 'number') {
+    return { idx: q.item.vise.idx, nombre: q.item.vise.nombre || 'sg' };
+  }
   /* Chez un indéclinable les douze cases sont identiques : la recherche par
      forme surlignerait toujours le nominatif. On garde la case demandée, ou à
      défaut la ligne du cas testé — le cas des phrases, qui n'ont pas de case
@@ -1128,7 +1329,7 @@ function grilleNom(it, q) {
     var v2 = vise && vise.nombre === 'loc2';
     h.push('<table class="para"><tr><td class="cas">loc. 2</td><td class="' +
       (v2 ? 'vise ' : '') + 'ru" colspan="2">' + ech(it.loc2.forme) +
-      ' <span class="muted" style="font-size:13px">— ' + ech(it.loc2.contexte) +
+      ' <span class="muted petit-texte">— ' + ech(it.loc2.contexte) +
       '</span></td></tr></table>');
   }
   return h.join('');
@@ -1172,8 +1373,8 @@ function regle(q) {
 function ouvrirSignalement() {
   var q = sess.q, z = el('zone-signal');
   z.innerHTML = '<div class="bloc"><h3>Signalement</h3>' +
-    '<input type="text" id="note-signal" style="font-size:16px" ' +
-    'placeholder="Ce qui vous paraît faux"><div style="height:8px"></div>' +
+    '<input type="text" id="note-signal" class="note" maxlength="500" ' +
+    'placeholder="Ce qui vous paraît faux"><div class="e8"></div>' +
     '<button class="petit" id="ok-signal">Enregistrer</button></div>';
   el('note-signal').focus();
   el('ok-signal').addEventListener('click', function () {
@@ -1182,7 +1383,8 @@ function ouvrirSignalement() {
     etat.signalements.push({
       carteId: q.carte.id, itemId: q.carte.itemId, sous: q.carte.sous,
       lemme: q.item.lemme || q.item.reponse, attendu: q.attendu,
-      note: el('note-signal').value, quand: new Date().toISOString()
+      note: String(el('note-signal').value).slice(0, 500),
+      quand: new Date().toISOString()
     });
     sauver();
     z.innerHTML = '<div class="bloc dim">Signalement enregistré. ' +
@@ -1191,23 +1393,65 @@ function ouvrirSignalement() {
 }
 
 function finSession() {
-  var justes = sess.perf.filter(Boolean).length, total = sess.perf.length;
+  var s = sess;
   sess = null;
-  var h = ['<div class="carte entree"><h2 style="margin-top:0">Session terminée</h2>'];
-  h.push('<p class="mono dim">' + justes + ' / ' + total + '</p>');
+  if (!s || !s.perf.length) { rendre('pratiquer'); return; }
+  var justes = s.perf.filter(Boolean).length, total = s.perf.length;
+  /* une carte ratée deux fois dans la séance n'apparaît qu'une fois */
+  var vus = {}, rates = s.rates.filter(function (r) {
+    if (vus[r.carte.id]) return false;
+    vus[r.carte.id] = true;
+    return true;
+  });
+  var h = ['<div class="carte entree"><h2 class="haut">Session terminée</h2>'];
+  h.push('<div class="score">' + justes + ' / ' + total + '</div>');
+  h.push('<p class="mono dim">' + Math.round(100 * justes / total) +
+    ' % de réussite</p>');
+  if (s.i < s.liste.length - 1) {
+    h.push('<div class="question dim">Séance interrompue : ' +
+      (s.liste.length - total) + ' carte' +
+      (s.liste.length - total > 1 ? 's' : '') + ' non vue' +
+      (s.liste.length - total > 1 ? 's' : '') + '. Les réponses données sont ' +
+      'enregistrées.</div>');
+  }
   h.push('</div>');
+  if (rates.length) {
+    h.push('<div class="carte"><h3>À revoir : ' + rates.length + ' carte' +
+      (rates.length > 1 ? 's' : '') + '</h3>');
+    rates.forEach(function (r) {
+      h.push('<div class="stat"><span class="lib"><span class="ru">' +
+        ech(r.mot) + '</span><br><span class="ru muted">' + ech(r.attendu) +
+        '</span></span></div>');
+    });
+    h.push('<div class="e8"></div>');
+    h.push('<button class="plein" id="revoir">Revoir ces cartes maintenant' +
+      '</button>');
+    h.push('<div class="question dim mt8">Elles reviendront de toute façon ' +
+      'd’elles-mêmes à la prochaine séance.</div>');
+    h.push('</div>');
+  }
+  h.push('<button class="primaire" id="encore">Nouvelle session</button>');
+  h.push('<div class="e8"></div>');
+  h.push('<button class="petit plein discret" id="accueil">Retour à ' +
+    'l’accueil</button>');
   el('vue').innerHTML = h.join('');
-  var attendu = ++jetonVue;
-  setTimeout(function () {
-    /* si l'utilisateur a changé d'onglet entre-temps, on ne reprend pas la main */
-    if (jetonVue === attendu && ongletActif === 'pratiquer') rendre('pratiquer');
-  }, 900);
+  var n = nbEchus();
+  el('entete-echus').textContent = n ? n + ' à revoir' : 'rien à revoir';
+  if (el('revoir')) {
+    el('revoir').addEventListener('click', function () {
+      lancerSession(entrelacer(rates.map(function (r) { return r.carte; })));
+    });
+  }
+  el('encore').addEventListener('click', function () { lancerSession(); });
+  el('accueil').addEventListener('click', function () { rendre('pratiquer'); });
+  el('encore').focus();
 }
 
 /* ------------------------------------------------------------------ onglets */
 
 var ongletActif = 'pratiquer';
-var jetonVue = 0;
+/* panneaux repliables de l'écran Pratiquer restés ouverts */
+var ouverts = {};
 
 function rendre(nom) {
   ongletActif = nom || ongletActif;
@@ -1233,27 +1477,50 @@ function vuePratiquer() {
     var e = etatDe(c.id);
     if (e) { vues += 1; if (e.echeance <= n) dus += 1; }
   });
-  h.push('<div class="carte">');
-  h.push('<h3>Session</h3>');
+
+  /* --- séance suspendue par un changement d'onglet --- */
+  if (sess) {
+    h.push('<div class="carte accent"><h3>Session en cours</h3>' +
+      '<div class="question">Question ' + Math.min(sess.i + 1, sess.liste.length) +
+      ' sur ' + sess.liste.length + '. Vos réponses sont enregistrées.</div>' +
+      '<button class="primaire" id="reprendre">Reprendre</button>' +
+      '<div class="e8"></div>' +
+      '<button class="petit plein discret" id="clore">Terminer cette session' +
+      '</button></div>');
+  }
+
+  /* --- rappel de sauvegarde --- */
+  var rappel = rappelSauvegarde();
+  if (rappel) {
+    h.push('<div class="annonce">' + ech(rappel) +
+      '<br><button class="petit" id="vers-outils">Sauvegarder maintenant' +
+      '</button></div>');
+  }
+
+  /* --- la séance : ce qui compte est en haut, le bouton aussi --- */
   var quota = rg.revisionsSeules ? 0 : rg.nouveaux;
   var qEff = quotaEffectif(quota, dus, rg.longueur);
   var prevu = Math.min(rg.longueur,
     Math.min(dus, Math.max(1, rg.longueur - qEff)) +
     Math.min(qEff, pool.length - vues) + (vues - dus));
-  h.push('<div class="question">' + dus + ' échues, ' + (pool.length - vues) +
-    ' jamais vues, ' + pool.length + ' cartes dans le filtre.</div>');
   var jamaisVues = pool.length - vues;
+  var filtre = libelleFiltre();
+  h.push('<div class="carte">');
+  h.push('<h3>' + (sess ? 'Autre session' : 'Session') + '</h3>');
+  h.push('<div class="question">' + dus + ' à revoir, ' + jamaisVues +
+    ' jamais vues, sur ' + pool.length + ' cartes' +
+    (filtre ? ' du filtre' : '') + '.</div>');
   var cause = '';
   if (prevu < rg.longueur) {
     if (jamaisVues > qEff && qEff === quota) {
       /* la contrainte est le quota de nouvelles cartes, pas le corpus : le dire,
          au lieu d'accuser le filtre à tort */
       cause = ' Moins que la longueur demandée, parce que le quota de ' +
-        'nouvelles cartes est à ' + qEff + ' et qu\u2019aucune révision ' +
-        'n\u2019est échue. Montez le curseur ci-dessous pour une séance plus ' +
-        'longue.';
+        'nouvelles cartes est à ' + qEff + ' et qu’aucune révision ' +
+        'n’est échue. Montez le curseur dans les réglages pour une ' +
+        'séance plus longue.';
     } else if (jamaisVues > qEff) {
-      cause = ' Moins que la longueur demandée : l\u2019introduction de ' +
+      cause = ' Moins que la longueur demandée : l’introduction de ' +
         'nouvelles cartes est bridée, voir ci-dessous.';
     } else {
       cause = ' Moins que la longueur demandée : il ne reste que ' + jamaisVues +
@@ -1264,31 +1531,65 @@ function vuePratiquer() {
   h.push('<div class="question dim">Cette session comptera <b>' + prevu +
     '</b> question' + (prevu > 1 ? 's' : '') + '.' + cause + '</div>');
   var motif = motifRegulation(quota, dus, rg.longueur);
-  if (motif) {
-    h.push('<div class="question" style="color:var(--blue)">' + ech(motif) +
-      '</div>');
+  if (motif) h.push('<div class="question info">' + ech(motif) + '</div>');
+  if (filtre) {
+    h.push('<div class="question info">Filtre actif : ' + ech(filtre) +
+      '. <button class="petit" id="sans-filtre">Revenir à tout le corpus' +
+      '</button></div>');
   }
+  h.push('<button class="primaire" id="go">Commencer</button>');
+  h.push('</div>');
+
+  /* --- raccourci vers le dernier cours --- */
+  if (DERNIER_COURS && THEMES.indexOf(DERNIER_COURS.theme) >= 0) {
+    var th = DERNIER_COURS.theme, tot = 0, neuves = 0;
+    CARTES.forEach(function (c) {
+      var sc = SOUS[c.sous];
+      if (!sc || sc.cas !== th) return;
+      tot += 1;
+      if (!etatDe(c.id)) neuves += 1;
+    });
+    var seul = rg.cas.length === 1 && rg.cas[0] === th && !rg.cats.length;
+    h.push('<div class="carte"><h3>Dernier cours</h3>' +
+      '<div class="question"><b>' + ech(DERNIER_COURS.titre || NOM_CAS[th]) +
+      '</b>' + (DERNIER_COURS.cours ? ' <span class="dim">— ' +
+        ech(DERNIER_COURS.cours) + '</span>' : '') + '<br>' + tot +
+      ' cartes, dont ' + neuves + ' jamais vues.</div>' +
+      (seul ? '<div class="question dim">Le filtre est déjà réglé sur ce ' +
+        'thème : « Commencer » ne servira que ces cartes.</div>'
+        : '<button class="plein" id="go-cours">Travailler uniquement ce ' +
+          'thème</button>') + '</div>');
+  }
+
+  /* --- réglages, repliés : on n'y touche pas à chaque séance --- */
+  h.push('<details id="d-reglages"' + (ouverts['d-reglages'] ? ' open' : '') +
+    '><summary>Réglages de la séance<span class="resume">' + rg.longueur +
+    ' questions au plus, ' + (rg.revisionsSeules ? 'révisions uniquement'
+      : rg.nouveaux + ' nouvelles cartes') + '</span></summary>' +
+    '<div class="corps">');
   h.push('<label class="bascule" for="rev-seules"><input type="checkbox" ' +
     'id="rev-seules"' + (rg.revisionsSeules ? ' checked' : '') +
     '> Révisions uniquement</label>');
-  h.push('<div style="height:12px"></div>');
+  h.push('<div class="e12"></div>');
   h.push('<div class="mono dim">Longueur</div>');
   h.push('<div class="chips" id="ch-longueur">' + [10, 20, 30, 50].map(function (v) {
     return '<button class="chip" data-v="' + ech(v) + '" aria-pressed="' +
       (rg.longueur === v) + '">' + ech(v) + '</button>';
   }).join('') + '</div>');
-  h.push('<div style="height:12px"></div>');
-  h.push('<div class="mono dim">Nouvelles cartes par session : <b id="lbl-nouveaux">' +
-    rg.nouveaux + '</b></div>');
+  h.push('<div class="e12"></div>');
+  h.push('<div class="mono dim"><label for="rg-nouveaux">Nouvelles cartes par ' +
+    'session</label> : <b id="lbl-nouveaux">' + rg.nouveaux + '</b></div>');
   h.push('<input type="range" id="rg-nouveaux" min="0" max="40" value="' +
     rg.nouveaux + '"' + (rg.revisionsSeules ? ' disabled' : '') + '>');
-  h.push('</div>');
+  h.push('</div></details>');
 
-  h.push('<div class="carte"><h3>Ordre d\u2019introduction</h3>');
+  h.push('<details id="d-ordre"' + (ouverts['d-ordre'] ? ' open' : '') +
+    '><summary>Ordre d’introduction<span class="resume">Commence par : ' +
+    ech(NOM_SUJET[rg.depart]) + '</span></summary><div class="corps">');
   h.push('<div class="question dim">Les cartes jamais vues arrivent par blocs, ' +
-    'un sujet après l\u2019autre, puis le cycle reprend pour une deuxième ' +
-    'vague. Les révisions échues, elles, mélangent tous les sujets : c\u2019est ' +
-    'ainsi qu\u2019un rappel d\u2019accusatif tombe alors que vous êtes sur le ' +
+    'un sujet après l’autre, puis le cycle reprend pour une deuxième ' +
+    'vague. Les révisions échues, elles, mélangent tous les sujets : c’est ' +
+    'ainsi qu’un rappel d’accusatif tombe alors que vous êtes sur le ' +
     'datif.</div>');
   /* Un sujet sans aucune carte ne doit pas être proposé : sans le bloc 2,
      choisir « Verbes » donnerait une séance vide sans que rien ne l'explique. */
@@ -1302,24 +1603,27 @@ function vuePratiquer() {
         return '<button class="chip" data-v="' + ech(x) + '" aria-pressed="' +
           (rg.depart === x) + '">' + ech(NOM_SUJET[x]) + '</button>';
       }).join('') + '</div>');
-  h.push('<div class="question dim" style="margin-top:6px">Ordre retenu : ' +
-    ordreSujets(rg.depart).map(function (x) { return ech(NOM_SUJET[x]); })
+  h.push('<div class="question dim mt6">Ordre retenu : ' +
+    ordreSujets(rg.depart).filter(function (x) {
+      return sujetsDispo.indexOf(x) >= 0 || x === 'genpl';
+    }).map(function (x) { return ech(NOM_SUJET[x]); })
       .join(' &rarr; ') + '</div>');
-  h.push('<div style="height:10px"></div>');
+  h.push('<div class="e10"></div>');
   h.push('<div class="mono dim">Cartes par bloc</div><div class="chips" ' +
     'id="ch-bloc">' + [30, 60, 100, 200].map(function (v) {
       return '<button class="chip" data-v="' + ech(v) + '" aria-pressed="' +
         (rg.bloc === v) + '">' + ech(v) + '</button>';
     }).join('') + '</div>');
-  h.push('<div class="question dim" style="margin-top:6px">À ' + rg.nouveaux +
+  h.push('<div class="question dim mt6">À ' + rg.nouveaux +
     ' nouvelles cartes par séance, un bloc de ' + rg.bloc + ' dure environ ' +
     Math.max(1, Math.round(rg.bloc / Math.max(1, rg.nouveaux))) +
     ' séances.</div>');
-  h.push('</div>');
+  h.push('</div></details>');
 
-  h.push(panneauProgression());
-
-  h.push('<div class="carte"><h3>Filtres</h3>');
+  h.push('<details id="d-filtres"' + (ouverts['d-filtres'] ? ' open' : '') +
+    '><summary>Filtres<span class="resume">' +
+    (filtre ? ech(filtre) : 'Aucun : tout le corpus') +
+    '</span></summary><div class="corps">');
   h.push('<div class="mono dim">Thème</div><div class="chips" id="ch-cas">' +
     THEMES.map(function (c) {
       return '<button class="chip" data-v="' + ech(c) + '" aria-pressed="' +
@@ -1327,27 +1631,50 @@ function vuePratiquer() {
     }).join('') + '</div>');
   var cats = {};
   LEX.forEach(function (it) { if (it.categorie) cats[it.categorie] = 1; });
-  h.push('<div style="height:10px"></div><div class="mono dim">Catégories</div>' +
+  h.push('<div class="e10"></div><div class="mono dim">Catégories</div>' +
     '<div class="chips" id="ch-cats">' + Object.keys(cats).sort().map(function (c) {
       return '<button class="chip" data-v="' + ech(c) + '" aria-pressed="' +
         (rg.cats.indexOf(c) >= 0) + '">' + ech(CAT_NOM[c] || c) + '</button>';
     }).join('') + '</div>');
-  h.push('<div class="question dim" style="margin-top:8px">Aucun filtre ' +
+  h.push('<div class="question dim mt8">Aucun filtre ' +
     'sélectionné signifie : tout le corpus. Les phrases en contexte ne portent ' +
-    'pas de catégorie lexicale et sont écartées dès qu\u2019une catégorie est ' +
+    'pas de catégorie lexicale et sont écartées dès qu’une catégorie est ' +
     'cochée.</div>');
-  h.push('</div>');
-  h.push('<button class="primaire" id="go">Commencer</button>');
+  h.push('</div></details>');
+
+  h.push(panneauProgression());
   el('vue').innerHTML = h.join('');
 
   el('go').addEventListener('click', function () { lancerSession(); });
+  if (el('reprendre')) {
+    el('reprendre').addEventListener('click', reprendreSession);
+    el('clore').addEventListener('click', finSession);
+  }
+  if (el('vers-outils')) {
+    el('vers-outils').addEventListener('click', function () { rendre('installer'); });
+  }
+  if (el('sans-filtre')) {
+    el('sans-filtre').addEventListener('click', function () {
+      rg.cas = []; rg.cats = []; sauver(); vuePratiquer();
+    });
+  }
+  if (el('go-cours')) {
+    el('go-cours').addEventListener('click', function () {
+      rg.cas = [DERNIER_COURS.theme]; rg.cats = []; sauver(); vuePratiquer();
+      window.scrollTo(0, 0);
+    });
+  }
+  ['d-reglages', 'd-ordre', 'd-filtres'].forEach(function (id) {
+    el(id).addEventListener('toggle', function () { ouverts[id] = this.open; });
+  });
   el('rev-seules').addEventListener('change', function () {
     rg.revisionsSeules = this.checked; sauver(); vuePratiquer();
   });
   el('rg-nouveaux').addEventListener('input', function () {
-    rg.nouveaux = parseInt(this.value, 10);
+    rg.nouveaux = Math.round(nombre(this.value, 12, 0, 40));
     el('lbl-nouveaux').textContent = rg.nouveaux; sauver();
   });
+  el('rg-nouveaux').addEventListener('change', function () { vuePratiquer(); });
   chips('ch-longueur', function (v) { rg.longueur = parseInt(v, 10); });
   chips('ch-depart', function (v) {
     rg.depart = v;
@@ -1359,6 +1686,27 @@ function vuePratiquer() {
   });
   chips('ch-cas', function (v) { bascule(rg.cas, v); });
   chips('ch-cats', function (v) { bascule(rg.cats, v); });
+}
+function libelleFiltre() {
+  var rg = etat.reglages, t = [];
+  rg.cas.forEach(function (c) { if (NOM_CAS[c]) t.push(NOM_CAS[c]); });
+  rg.cats.forEach(function (c) { t.push(CAT_NOM[c] || c); });
+  return t.join(', ');
+}
+/* La progression ne vit que dans ce navigateur : un téléphone perdu, changé,
+   ou des « données de site » effacées, et tout est perdu. Le rappel n'apparaît
+   qu'après un volume de travail qui vaut la peine d'être protégé. */
+var SEUIL_RAPPEL_REPONSES = 150, SEUIL_RAPPEL_JOURS = 14;
+function rappelSauvegarde() {
+  var m = etat.meta;
+  if (m.reponses < SEUIL_RAPPEL_REPONSES) return null;
+  var jours = m.dernierExport
+    ? Math.floor((Date.now() - m.dernierExport) / jour()) : null;
+  if (jours !== null && jours < SEUIL_RAPPEL_JOURS) return null;
+  return m.reponses + ' réponses depuis ' + (jours === null
+    ? 'le début, et aucune sauvegarde n’a encore été faite'
+    : 'la dernière sauvegarde, il y a ' + jours + ' jours') +
+    '. La progression n’existe que sur ce téléphone.';
 }
 /* Un sujet est « acquis » quand toutes ses cartes ont été introduites et
    réussies au moins deux fois en production. C'est la définition qui compte
@@ -1391,7 +1739,7 @@ function panneauProgression() {
       '<td class="cas">' + st.total + '</td></tr>');
   });
   h.push('</table>');
-  h.push('<div class="question dim" style="margin-top:8px">« Acquise » veut ' +
+  h.push('<div class="question dim mt8">« Acquise » veut ' +
     'dire : produite correctement au moins deux fois. Une carte acquise ne ' +
     'revient qu\u2019à son échéance, jamais en remplissage de séance.</div>');
   h.push('</div>');
@@ -1438,7 +1786,7 @@ function vueErreurs() {
         l.e.tentatives + (l.e.echecsUneLettre ? ' &middot; ' +
           l.e.echecsUneLettre + " d'une lettre" : '') + '</span></div>');
     });
-    h.push('<div style="height:10px"></div>');
+    h.push('<div class="e10"></div>');
     h.push('<button class="primaire" id="go-erreurs">Réviser ces cartes</button>');
   }
   h.push('</div>');
@@ -1475,7 +1823,7 @@ function vueStats() {
   THEMES.forEach(function (c) {
     var liste = GRAM.sous.filter(function (s) { return s.cas === c; });
     if (!liste.length) return;
-    h.push('<div class="mono dim" style="margin:10px 0 5px">' +
+    h.push('<div class="mono dim entre">' +
       ech(NOM_CAS[c]) + '</div>');
     liste.forEach(function (s) {
       var st = etat.sous[s.id] || { tentatives: 0, reussites: 0 };
@@ -1496,7 +1844,7 @@ function vueStats() {
     });
     h.push('<textarea id="txt-signal" readonly>' +
       ech(texteSignalements()) + '</textarea>');
-    h.push('<div style="height:8px"></div>');
+    h.push('<div class="e8"></div>');
     h.push('<div class="ligne"><button class="petit" id="copie-signal">Copier</button>' +
       '<button class="petit" id="vide-signal">Effacer la liste</button></div>');
   }
@@ -1509,6 +1857,7 @@ function vueStats() {
     ' phrases en contexte.</div></div>');
 
   el('vue').innerHTML = h.join('');
+  poserLargeurs();
   if (el('copie-signal')) {
     el('copie-signal').addEventListener('click', function () {
       var t = el('txt-signal'); t.select();
@@ -1535,14 +1884,14 @@ function ligneStat(lib, t, r, n2) {
   var pct = t ? Math.round(100 * r / t) : 0;
   return '<div class="stat' + (grise ? ' grise' : '') + (n2 ? ' n2' : '') +
     '"><span class="lib">' + ech(lib) + '</span>' +
-    (grise || !t ? '' : '<span class="jauge"><i style="width:' + pct +
-      '%"></i></span>') +
+    (grise || !t ? '' : '<span class="jauge"><i data-pct="' + pct +
+      '"></i></span>') +
     '<span class="val">' + (t === 0 ? '—' : grise ? t + ' tent.' :
       pct + ' % &middot; ' + t) + '</span></div>';
 }
 
 function vueRegles() {
-  var h = ['<div class="question dim">Référence du bloc 1, consultable à tout ' +
+  var h = ['<div class="question dim">Référence grammaticale, consultable à tout ' +
     'moment. Aucune règle n\u2019est affichée avant une réponse pendant ' +
     'l\u2019exercice.</div>'];
   THEMES.forEach(function (c) {
@@ -1573,53 +1922,303 @@ function vueRegles() {
 }
 
 function vueInstaller() {
-  var h = ['<div class="carte"><h3>Installer sur Android</h3>' +
+  var m = etat.meta, secours = lireSecours();
+  var illisible = null;
+  try { illisible = localStorage.getItem(CLE_ILLISIBLE); } catch (errL) { illisible = null; }
+  var nbCartes = Object.keys(etat.etats).length;
+  var h = [];
+  h.push('<div class="carte"><h3>Sauvegarde de la progression</h3>' +
+    '<p class="question">La progression est stockée dans ce navigateur ' +
+    'uniquement : ' + nbCartes + ' carte' + (nbCartes > 1 ? 's' : '') +
+    ' abordée' + (nbCartes > 1 ? 's' : '') + '. Sauvegardez avant de changer ' +
+    'de téléphone ou d’effacer les données du site, et de temps en temps ' +
+    'par précaution.</p>' +
+    '<div class="question" id="etat-sauvegarde">' + ech(
+      m.dernierExport
+        ? 'Dernière sauvegarde : ' + dateLisible(m.dernierExport) + '.'
+        : 'Aucune sauvegarde n’a encore été faite.') +
+    ' <span id="etat-persistance">' + ech(messagePersistance()) + '</span></div>' +
+    '<button class="primaire" id="exp-fichier">Enregistrer un fichier de ' +
+    'sauvegarde</button><div class="e8"></div>' +
+    '<div class="ligne">' +
+    (navigator.share ? '<button class="petit" id="exp-partage">Envoyer…</button>'
+      : '') +
+    '<button class="petit" id="exp">Afficher le texte</button></div>' +
+    '<div class="question dim mt8">Le fichier va dans les téléchargements du ' +
+    'téléphone.' + (navigator.share ? ' « Envoyer » le transmet à une autre ' +
+      'application : courriel à vous-même, espace de stockage. À partir de ' +
+      'là, c’est cette application qui le protège.' : '') +
+    '</div></div>');
+
+  h.push('<div class="carte"><h3>Restaurer une sauvegarde</h3>' +
+    '<p class="question">L’état actuel est remplacé. Une copie de secours ' +
+    'en est gardée sur ce téléphone, pour pouvoir revenir en arrière.</p>' +
+    '<input type="file" id="imp-fichier" class="cache" ' +
+    'accept=".json,.txt,application/json,text/plain">' +
+    '<button class="petit plein" id="imp-choisir">Choisir un fichier de ' +
+    'sauvegarde</button><div class="e8"></div>' +
+    '<textarea id="zone-json" aria-label="Texte de sauvegarde" ' +
+    'placeholder="…ou collez ici le texte d’une sauvegarde"></textarea>' +
+    '<div class="e8"></div>' +
+    '<button class="petit plein" id="imp">Importer le texte collé</button>' +
+    '<div class="question mt8" id="msg-import" role="status"></div>' +
+    (secours ? '<hr><div class="question">Copie de secours du ' +
+      ech(dateLisible(secours.quand)) + ' : ' +
+      Object.keys(secours.etat.etats).length + ' cartes.</div>' +
+      '<button class="petit plein" id="restaurer">Rétablir cette copie</button>'
+      : '') +
+    (illisible ? '<hr><div class="question">Un état que l\u2019application ' +
+      'n\u2019a pas su relire a été mis de côté sur ce téléphone.</div>' +
+      '<button class="petit plein" id="relire">Tenter de le relire</button>'
+      : '') +
+    '<hr><button class="petit plein discret" id="raz">Tout effacer</button></div>');
+
+  h.push('<div class="carte"><h3>Installer sur Android</h3>' +
     '<p>Ouvrez le site dans Chrome, puis menu ⋮ &rarr; ' +
-    '« Installer l\u2019application ». L\u2019application démarre alors en ' +
+    '« Installer l’application ». L’application démarre alors en ' +
     'plein écran et fonctionne hors connexion.</p>' +
-    '<div class="question dim">Le clavier russe s\u2019ajoute dans les ' +
+    '<div class="question dim">Le clavier russe s’ajoute dans les ' +
     'réglages Android. Les accents toniques ne se tapent jamais : ils sont ' +
     'affichés, et ignorés à la correction. Le ё, en revanche, est exigé : il se ' +
-    'trouve sous un appui long sur е sur la plupart des claviers.</div></div>'];
+    'trouve sous un appui long sur е sur la plupart des claviers.</div></div>');
   h.push('<div class="carte"><h3>Mode hors connexion</h3><div id="etat-sw" ' +
-    'class="question">Vérification…</div></div>');
-  h.push('<div class="carte"><h3>Sauvegarde</h3>' +
-    '<p class="question">Les résultats sont stockés dans ce navigateur ' +
-    'uniquement. Exportez avant de changer d\u2019appareil ou d\u2019effacer ' +
-    'les données du site.</p>' +
-    '<button class="petit plein" id="exp">Exporter</button>' +
-    '<div style="height:8px"></div>' +
-    '<textarea id="zone-json" placeholder="Collez ici un export pour le ' +
-    'réimporter"></textarea><div style="height:8px"></div>' +
-    '<div class="ligne"><button class="petit" id="imp">Importer</button>' +
-    '<button class="petit" id="raz">Tout effacer</button></div></div>');
+    'class="question">Vérification…</div>' +
+    '<div class="question dim">Version ' + ech(VERSION) + '. Aucune donnée ne ' +
+    'quitte ce téléphone, et l’application n’appelle aucun service ' +
+    'tiers.</div></div>');
   el('vue').innerHTML = h.join('');
   el('etat-sw').textContent = messageSW();
+  var msg = function (t) { el('msg-import').textContent = t; };
+
+  el('exp-fichier').addEventListener('click', function () {
+    var ok = telecharger(nomSauvegarde('json'), JSON.stringify(etat));
+    if (ok) { marquerExport(); vueInstaller(); }
+    else {
+      el('etat-sauvegarde').textContent = 'Ce navigateur refuse le ' +
+        'téléchargement. Utilisez « Afficher le texte » et copiez-le.';
+    }
+  });
+  if (el('exp-partage')) {
+    el('exp-partage').addEventListener('click', function () {
+      partager(JSON.stringify(etat)).then(function (fait) {
+        if (fait) { marquerExport(); vueInstaller(); }
+      });
+    });
+  }
   el('exp').addEventListener('click', function () {
     el('zone-json').value = JSON.stringify(etat);
     el('zone-json').select();
+    marquerExport();
+    msg('Texte affiché ci-dessus : copiez-le en lieu sûr.');
+  });
+  el('imp-choisir').addEventListener('click', function () {
+    el('imp-fichier').click();
+  });
+  el('imp-fichier').addEventListener('change', function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    if (f.size > TAILLE_MAX_IMPORT) {
+      msg('Import refusé : ce fichier est trop volumineux pour être une ' +
+        'sauvegarde.');
+      return;
+    }
+    var lecteur = new FileReader();
+    lecteur.onload = function () { tenterImport(String(lecteur.result || '')); };
+    lecteur.onerror = function () { msg('Lecture du fichier impossible.'); };
+    lecteur.readAsText(f);
   });
   el('imp').addEventListener('click', function () {
-    try {
-      var e = JSON.parse(el('zone-json').value);
-      if (!e || !e.etats) throw new Error('format');
-      etat = e; etat.sous = etat.sous || {};
-      etat.signalements = etat.signalements || [];
-      etat.reglages = etat.reglages || neuf().reglages;
-      sauver(); rendre('pratiquer');
-    } catch (err) {
-      el('etat-sw').textContent = 'Import refusé : le texte collé n\u2019est ' +
-        'pas un export valide.';
-    }
+    tenterImport(el('zone-json').value);
   });
+  function tenterImport(texte) {
+    try {
+      var nb = importer(texte);
+      rendre('installer');
+      el('msg-import').textContent = 'Import réussi : ' + nb + ' carte' +
+        (nb > 1 ? 's' : '') + ' reprise' + (nb > 1 ? 's' : '') + '.';
+    } catch (err) {
+      msg('Import refusé : ce n’est pas une sauvegarde valide. ' +
+        'L’état en place n’a pas été modifié.');
+    }
+  }
+  if (el('relire')) {
+    el('relire').addEventListener('click', function () {
+      try {
+        var nb = importer(illisible);
+        localStorage.removeItem(CLE_ILLISIBLE);
+        rendre('installer');
+        el('msg-import').textContent = 'État relu : ' + nb + ' cartes reprises.';
+      } catch (err) {
+        msg('Cet état reste illisible. Il est conservé, et son texte est ' +
+          'affiché ci-dessus : copiez-le pour le faire examiner.');
+        el('zone-json').value = illisible;
+      }
+    });
+  }
+  if (el('restaurer')) {
+    el('restaurer').addEventListener('click', function () {
+      if (this.getAttribute('data-c')) {
+        retablirSecours();
+        rendre('installer');
+        el('msg-import').textContent = 'Copie de secours rétablie.';
+      } else {
+        this.setAttribute('data-c', '1');
+        this.textContent = 'Confirmer : remplacer l’état actuel';
+      }
+    });
+  }
   el('raz').addEventListener('click', function () {
     if (this.getAttribute('data-c')) {
-      etat = neuf(); sauver(); rendre('pratiquer');
+      copieDeSecours();
+      etat = neuf(); sess = null; sauver();
+      preparerIntroduction(etat.reglages.depart, etat.reglages.bloc);
+      rendre('pratiquer');
     } else {
       this.setAttribute('data-c', '1');
-      this.textContent = 'Confirmer l\u2019effacement';
+      this.textContent = 'Confirmer l’effacement';
     }
   });
+}
+
+/* -------------------------------------------------- sauvegarde, restauration */
+
+function dateLisible(t) {
+  var d = new Date(t);
+  if (isNaN(d.getTime())) return 'date inconnue';
+  function z(x) { return (x < 10 ? '0' : '') + x; }
+  return z(d.getDate()) + '/' + z(d.getMonth() + 1) + '/' + d.getFullYear() +
+    ' à ' + z(d.getHours()) + ' h ' + z(d.getMinutes());
+}
+function nomSauvegarde(ext) {
+  var d = new Date();
+  function z(x) { return (x < 10 ? '0' : '') + x; }
+  return 'revision-russe-' + d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' +
+    z(d.getDate()) + '.' + ext;
+}
+function marquerExport() {
+  etat.meta.dernierExport = Date.now();
+  etat.meta.reponses = 0;
+  sauver();
+}
+function telecharger(nom, texte) {
+  try {
+    var blob = new Blob([texte], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = nom;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    return true;
+  } catch (err) {
+    console.warn('Téléchargement impossible', err && err.message);
+    return false;
+  }
+}
+/* Partage par la feuille de partage d'Android. En fichier texte : c'est le
+   seul type que le partage web accepte partout ; à défaut, en texte brut. */
+function partager(texte) {
+  var nom = nomSauvegarde('txt');
+  try {
+    if (typeof File !== 'undefined' && navigator.canShare) {
+      var f = new File([texte], nom, { type: 'text/plain' });
+      if (navigator.canShare({ files: [f] })) {
+        return navigator.share({ files: [f], title: nom })
+          .then(function () { return true; }, function () { return false; });
+      }
+    }
+    return navigator.share({ title: nom, text: texte })
+      .then(function () { return true; }, function () { return false; });
+  } catch (err) {
+    return Promise.resolve(false);
+  }
+}
+/* L'import passe par le même assainissement que le chargement. Ce n'était pas
+   le cas : l'état collé était adopté tel quel, et un export tronqué ou édité à
+   la main pouvait planter l'écran suivant. L'état en place est copié avant
+   d'être remplacé. Toute erreur est levée AVANT la première modification. */
+function importer(texte) {
+  if (typeof texte !== 'string' || !texte.trim()) throw new Error('vide');
+  if (texte.length > TAILLE_MAX_IMPORT) throw new Error('taille');
+  var e = JSON.parse(texte);
+  if (!e || typeof e !== 'object' || Array.isArray(e) || !e.etats ||
+      typeof e.etats !== 'object' || Array.isArray(e.etats)) {
+    throw new Error('format');
+  }
+  var propre = assainir(e);
+  copieDeSecours();
+  etat = propre;
+  sess = null;
+  nettoyerEtats();
+  preparerIntroduction(etat.reglages.depart, etat.reglages.bloc);
+  return Object.keys(etat.etats).length;
+}
+function copieDeSecours() {
+  /* un état vide ne vaut pas la peine d'écraser une copie utile */
+  if (!Object.keys(etat.etats).length) return;
+  try {
+    localStorage.setItem(CLE_SECOURS,
+      JSON.stringify({ quand: Date.now(), etat: etat }));
+  } catch (err) {
+    console.warn('Copie de secours impossible', err && err.message);
+  }
+}
+function lireSecours() {
+  try {
+    var brut = localStorage.getItem(CLE_SECOURS);
+    if (!brut) return null;
+    var o = JSON.parse(brut);
+    if (!o || typeof o !== 'object' || !o.etat) return null;
+    var propre = assainir(o.etat);
+    if (!Object.keys(propre.etats).length) return null;
+    return { quand: nombre(o.quand, 0, 0, null), etat: propre };
+  } catch (err) { return null; }
+}
+function retablirSecours() {
+  var s = lireSecours();
+  if (!s) return;
+  var actuel = etat;
+  etat = s.etat;
+  sess = null;
+  /* l'état remplacé devient à son tour la copie : le geste est réversible */
+  try {
+    if (Object.keys(actuel.etats).length) {
+      localStorage.setItem(CLE_SECOURS,
+        JSON.stringify({ quand: Date.now(), etat: actuel }));
+    } else localStorage.removeItem(CLE_SECOURS);
+  } catch (err) { /* sans conséquence : la restauration, elle, est faite */ }
+  nettoyerEtats();
+  preparerIntroduction(etat.reglages.depart, etat.reglages.bloc);
+}
+
+/* Android peut effacer d'office les données d'un site peu utilisé quand le
+   stockage manque. On demande au navigateur de les traiter comme durables ;
+   il l'accorde en général à une application installée. Aucune fenêtre
+   d'autorisation n'est affichée. */
+var persistance = 'inconnu';
+function demanderPersistance() {
+  if (persistance !== 'inconnu') return;
+  if (!navigator.storage || !navigator.storage.persist) {
+    persistance = 'indisponible';
+    return;
+  }
+  persistance = 'demande';
+  navigator.storage.persist().then(function (ok) {
+    persistance = ok ? 'oui' : 'non';
+  }, function () { persistance = 'non'; }).then(function () {
+    if (el('etat-persistance')) {
+      el('etat-persistance').textContent = messagePersistance();
+    }
+  });
+}
+function messagePersistance() {
+  if (persistance === 'oui') return 'Stockage protégé contre l’effacement ' +
+    'automatique.';
+  if (persistance === 'non') return 'Stockage non protégé : Android peut ' +
+    'l’effacer si la place manque. Installer l’application et ' +
+    'sauvegarder régulièrement réduit ce risque.';
+  return '';
 }
 
 /* ------------------------------------------------------------ service worker */
@@ -1647,18 +2246,36 @@ function enregistrerSW() {
     console.warn('Service worker non enregistré : protocole ' + location.protocol);
     return;
   }
-  navigator.serviceWorker.register('./sw.js').then(function () {
+  /* Quand une nouvelle version a été téléchargée, la page ouverte tourne encore
+     sur l'ancien code. On le dit, et on laisse l'utilisateur recharger quand il
+     veut : jamais de rechargement d'office au milieu d'une séance. À la toute
+     première installation il n'y a rien à recharger. */
+  var dejaControlee = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (!dejaControlee) { dejaControlee = true; return; }
+    annoncerMiseAJour();
+  });
+  navigator.serviceWorker.register('./sw.js').then(function (reg) {
     etatSW = 'ok';
+    try { reg.update(); } catch (err) { /* hors connexion : sans objet */ }
     if (ongletActif === 'installer' && el('etat-sw')) {
       el('etat-sw').textContent = messageSW();
     }
   }).catch(function (err) {
     etatSW = 'erreur ' + err.message;
-    console.error('Service worker : échec de l\u2019enregistrement', err);
+    console.error('Service worker : échec de l’enregistrement', err);
     if (ongletActif === 'installer' && el('etat-sw')) {
       el('etat-sw').textContent = messageSW();
     }
   });
+}
+function annoncerMiseAJour() {
+  var z = el('bandeau-maj');
+  if (!z) return;
+  z.innerHTML = '<div class="annonce">Une nouvelle version de ' +
+    'l’application a été téléchargée.<br><button class="petit" ' +
+    'id="recharger">Recharger maintenant</button></div>';
+  el('recharger').addEventListener('click', function () { location.reload(); });
 }
 
 /* ------------------------------------------------------------------ démarrage */
@@ -1667,14 +2284,19 @@ try {
   Array.prototype.forEach.call(document.querySelectorAll('#onglets button'),
     function (b) {
       b.addEventListener('click', function () {
-        sess = null;
-        jetonVue += 1;
-        try { rendre(b.getAttribute('data-onglet')); }
+        /* la séance en cours n'est plus détruite : elle reste reprenable
+           depuis l'écran Pratiquer */
+        try { rendre(b.getAttribute('data-onglet')); window.scrollTo(0, 0); }
         catch (err) { afficherPanne(err); }
       });
     });
   rendre('pratiquer');
   enregistrerSW();
+  if (navigator.storage && navigator.storage.persisted) {
+    navigator.storage.persisted().then(function (ok) {
+      if (ok) persistance = 'oui';
+    }, function () { /* sans objet */ });
+  }
 } catch (err) {
   afficherPanne(err);
 }
@@ -1686,7 +2308,7 @@ function afficherPanne(err) {
   console.error('Panne du moteur', err);
   var vue = el('vue');
   if (!vue) return;
-  vue.innerHTML = '<div class="carte"><h3 style="color:#e05c5c">Panne du ' +
+  vue.innerHTML = '<div class="carte"><h3 class="erreur">Panne du ' +
     'moteur</h3><p>Une erreur imprévue a interrompu l\u2019affichage. ' +
     'L\u2019application reste utilisable en rechargeant la page ; votre ' +
     'progression est enregistrée.</p><div class="diff">' +

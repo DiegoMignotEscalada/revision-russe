@@ -1,37 +1,45 @@
 /* Service worker de l'application de révision de russe.
-   Stratégie : cache-first avec mise à jour en arrière-plan.
+   Stratégie : cache d'abord, avec mise à jour en arrière-plan.
    Pour forcer le rechargement des fichiers après un déploiement, incrémenter
    CACHE_VERSION. C'est le seul geste nécessaire. */
 
-const CACHE_VERSION = 'revision-russe-v8';
+const CACHE_VERSION = 'revision-russe-v9';
 
+/* Tout ce que l'application utilise, et rien d'autre. Depuis la version 9, la
+   liste ne contient plus aucune adresse distante : les polices sont dans le
+   dossier polices/. */
 const FICHIERS = [
   './',
   './index.html',
+  './style.css',
   './app.js',
   './manifest.json',
   './data/grammaire.js',
   './data/lexique.js',
   './data/phrases.js',
   './data/bloc2.js',
+  './data/bloc3.js',
   './icones/icone-192.png',
   './icones/icone-512.png',
   './icones/icone-maskable-512.png',
-  /* Seule entrée distante de la liste. Si vous retirez les polices de
-     index.html pour supprimer toute requête vers un tiers, retirez aussi
-     cette ligne : elle échouerait sans conséquence, mais autant être net. */
-  'https://fonts.googleapis.com/css2?family=Spectral:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap'
+  './polices/spectral-latin-300-normal.woff2',
+  './polices/spectral-latin-400-normal.woff2',
+  './polices/spectral-latin-600-normal.woff2',
+  './polices/spectral-cyrillic-300-normal.woff2',
+  './polices/spectral-cyrillic-400-normal.woff2',
+  './polices/spectral-cyrillic-600-normal.woff2',
+  './polices/jetbrains-mono-latin-400-normal.woff2',
+  './polices/jetbrains-mono-latin-700-normal.woff2',
+  './polices/jetbrains-mono-cyrillic-400-normal.woff2',
+  './polices/jetbrains-mono-cyrillic-700-normal.woff2'
 ];
 
 self.addEventListener('install', (ev) => {
   ev.waitUntil(
     caches.open(CACHE_VERSION).then((cache) =>
-      /* addAll échoue en bloc si une seule requête échoue : les polices
-         distantes sont donc mises en cache une par une, sans faire tomber
-         l'installation si le réseau les refuse. */
-      /* fetch + put plutôt que cache.add : add rejette en bloc et n'est pas
-         disponible partout. Chaque fichier est mis en cache indépendamment,
-         un échec réseau ne fait pas tomber l'installation. */
+      /* fetch + put plutôt que cache.addAll : addAll rejette en bloc. Chaque
+         fichier est mis en cache indépendamment, un échec réseau sur l'un ne
+         fait pas tomber l'installation. */
       Promise.all(FICHIERS.map((url) =>
         fetch(new Request(url, { cache: 'reload' }))
           .then((rep) => {
@@ -60,13 +68,25 @@ self.addEventListener('fetch', (ev) => {
   const req = ev.request;
   if (req.method !== 'GET') return;
 
+  /* Seules les requêtes vers ce site sont prises en charge. Tout le reste est
+     laissé au navigateur, sans passer par le cache : le service worker ne
+     stocke ni ne sert jamais de contenu tiers. */
+  let memeOrigine = false;
+  try { memeOrigine = new URL(req.url).origin === self.location.origin; }
+  catch (err) { memeOrigine = false; }
+  if (!memeOrigine) return;
+
   /* La requête réseau est lancée SYNCHRONEMENT, et waitUntil est appelé dans le
      corps du gestionnaire : sans cela le navigateur peut tuer le service worker
      dès la réponse servie depuis le cache, et la mise à jour en arrière-plan
      n'aboutit jamais. Le cache resterait figé jusqu'au prochain changement de
      CACHE_VERSION. */
-  const reseau = fetch(req).then((rep) => {
-    if (rep && rep.ok && (rep.type === 'basic' || rep.type === 'cors')) {
+  /* cache: 'no-cache' : la copie de rafraîchissement est toujours revalidée
+     auprès du serveur. Sans cela, le navigateur peut rendre sa propre copie
+     encore « fraîche » pendant dix minutes, et le cache mêlerait l'ancienne
+     version d'un fichier à la nouvelle d'un autre. */
+  const reseau = fetch(req, { cache: 'no-cache' }).then((rep) => {
+    if (rep && rep.ok && rep.type === 'basic') {
       const copie = rep.clone();
       caches.open(CACHE_VERSION).then((cache) => cache.put(req, copie));
     }
@@ -74,9 +94,10 @@ self.addEventListener('fetch', (ev) => {
   });
   ev.waitUntil(reseau.catch(() => {}));
 
-  /* Cache d'abord, réseau en repli. */
+  /* Cache d'abord, réseau en repli. ignoreSearch : une adresse ouverte avec un
+     paramètre ajouté par un lanceur ou un partage doit trouver la même page. */
   ev.respondWith(
-    caches.match(req)
+    caches.match(req, { ignoreSearch: true })
       .then((cachee) => cachee || reseau)
       .catch(() => reseau)
   );

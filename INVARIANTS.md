@@ -193,3 +193,28 @@ appartiennent.
 | J7 | Aucun secret ni adresse de courriel dans les fichiers publiés | 1 | audit-securite.js |
 | J8 | Une politique de sécurité du contenu est déclarée et restrictive | 2 | audit-securite.js |
 | J9 | Le service worker a une portée limitée et exige HTTPS | 2 | audit-securite.js |
+
+## K — Version 2, vérifié dans un vrai navigateur
+
+| Id | Invariant | Sév. | Vérifié par |
+| --- | --- | --- | --- |
+| K1 | Une progression écrite par la version en ligne est relue à l'identique après mise à jour | 1 | essai-migration.js, essai-navigateur.js etats |
+| K2 | Un état illisible est mis de côté avant toute réécriture | 1 | essai-navigateur.js etats |
+| K3 | Un import invalide ou hostile ne modifie rien, ne plante rien, n'exécute rien | 1 | essai-navigateur.js fumee |
+| K4 | L'état remplacé par un import est récupérable | 1 | essai-navigateur.js fumee |
+| K5 | Aucune requête hors de l'origine, aucune violation de la politique de sécurité | 2 | essai-navigateur.js, essai-corpus.js |
+| K6 | Hors connexion : données, styles et polices servis | 2 | essai-navigateur.js fumee |
+| K7 | Toute carte du bloc 3 accepte sa réponse juste, ses variantes, et surligne une case | 1 | essai-navigateur.js bloc3 |
+| K8 | Toute carte du corpus refuse une réponse fausse puis accepte la réponse affichée | 1 | essai-corpus.js |
+| K9 | Une séance suspendue par un changement d'onglet reprend au bon rang | 4 | essai-navigateur.js fumee |
+| K10 | Une nouvelle version est annoncée, jamais rechargée d'office | 4 | essai-migration.js |
+| K11 | Bloc 3 : accents, unicité, choix, cellules et règles cohérents | 1 | verifier-bloc3.py |
+
+**Piège rencontré.** Une constante déclarée par `var` plus bas dans le fichier
+n'a pas encore de valeur quand `charger()` s'exécute, en tête. Une liste de clés
+interdites ajoutée à l'assainissement valait donc `undefined` au démarrage :
+l'erreur était attrapée, l'état remis à neuf, puis réécrit par-dessus la
+progression. Les essais sur état vide ne voyaient rien ; seul l'essai de
+migration, qui part d'une progression réelle, l'a montré. Toute constante lue
+par `charger()`, `assainir()` ou `sauver()` se déclare avant le premier
+chargement.

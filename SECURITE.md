@@ -54,6 +54,15 @@ détruire l'état en place.
 ne perturbe ni le rendu ni les sessions. L'état chargé est reconstruit champ par
 champ dans un objet neuf, jamais fusionné.
 
+**Correction de la version 2.** Ce qui précède n'était vrai qu'au chargement.
+À l'import, l'état collé était adopté tel quel, sans assainissement, jusqu'au
+prochain démarrage : un export tronqué ou édité pouvait planter l'écran suivant.
+L'import passe maintenant par la même fonction que le chargement, refuse tout
+texte de plus de 5 Mo, et garde une copie de secours de l'état remplacé. Les
+trois clés de prototype sont écartées, et les tables internes n'ont plus de
+prototype : la clé `constructor` y trouvait auparavant une propriété héritée et
+n'était pas purgée.
+
 ### 3. L'adresse par laquelle la page est ouverte
 
 Un seul écran réaffiche l'URL — celui qui signale un fichier de données
@@ -64,25 +73,16 @@ n'utilise plus que le chemin.
 
 ---
 
-## Réseau : une seule requête vers un tiers, supprimable
+## Réseau : aucune requête vers un tiers
 
 **Le moteur ne fait aucune requête réseau.** Ni `fetch`, ni `XMLHttpRequest`, ni
-`sendBeacon`, ni WebSocket. Vérifié automatiquement. Aucune mesure d'audience,
-aucun traceur, aucun pixel.
+`sendBeacon`, ni WebSocket. Aucune mesure d'audience, aucun traceur, aucun pixel.
 
-La seule sortie vers un tiers est le chargement de deux polices de caractères
-depuis Google Fonts, au premier lancement. Ce que Google voit alors : l'adresse
-IP de l'appareil, son navigateur, et la page demandeuse. Ensuite, le service
-worker sert tout depuis le cache.
-
-**Pour supprimer cette requête**, retirez les trois lignes signalées en tête de
-`index.html`, et l'entrée `fonts.googleapis.com` de la liste `FICHIERS` dans
-`sw.js`. L'application fonctionne à l'identique ; la typographie retombe sur les
-polices du système. Vérifié : aucune erreur, aucune référence distante
-résiduelle.
-
-Si votre politique interne restreint les appels sortants, c'est le réglage à
-choisir.
+Depuis la version 2, **la page non plus**. La version 1 chargeait deux polices
+chez Google Fonts au premier lancement, ce qui livrait à Google l'adresse IP de
+l'appareil. Les polices sont désormais des fichiers du site, dans `polices/`.
+Vérifié dans un vrai navigateur : aucune requête ne sort de l'origine, en ligne
+comme hors connexion.
 
 ---
 
@@ -92,22 +92,21 @@ GitHub Pages n'autorise aucun en-tête HTTP personnalisé. Une politique est don
 déclarée dans la page :
 
 ```
-default-src 'self'; script-src 'self';
-style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;
-connect-src 'self'; object-src 'none'; frame-src 'none';
+default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self';
+img-src 'self' data:; connect-src 'self'; manifest-src 'self';
+worker-src 'self'; object-src 'none'; frame-src 'none';
 base-uri 'none'; form-action 'none'
 ```
 
 Effet concret : même si un contenu malveillant parvenait à entrer dans la page,
 il ne pourrait ni exécuter de script en ligne, ni charger un script distant, ni
-envoyer quoi que ce soit ailleurs que sur cette origine. `unsafe-inline` n'est
-accordé qu'aux styles ; les scripts sont tous des fichiers externes et n'ont
-besoin d'aucune dérogation.
+poser un style, ni envoyer quoi que ce soit ailleurs que sur cette origine. La
+version 1 accordait `unsafe-inline` aux styles et autorisait deux domaines de
+Google ; ces deux dérogations ont disparu. Vérifié dans Chromium sur les 1 591
+cartes : aucune violation signalée.
 
-`connect-src` est à `'self'` plutôt qu'à `'none'` : cela suffit à empêcher
-l'exfiltration vers un tiers — l'origine est un hébergement statique, sans
-point de collecte — sans risquer de gêner le service worker.
+Une politique posée par une balise ne sait pas interdire l'affichage dans un
+cadre. L'application le refuse donc elle-même, au démarrage.
 
 ---
 
@@ -121,9 +120,10 @@ réseau, et il persiste. Trois précautions vérifiées automatiquement :
   de tout le domaine.
 - **HTTPS exigé.** L'enregistrement est refusé hors HTTPS, et l'échec est
   affiché plutôt qu'avalé.
-- **Cache discipliné.** Seules les réponses valides et de type connu entrent en
-  cache ; les requêtes non `GET` ne sont pas interceptées ; les anciens caches
-  sont purgés à chaque changement de version.
+- **Cache discipliné.** Seules les réponses valides de ce site entrent en
+  cache ; les requêtes vers une autre origine et les requêtes non `GET` ne sont
+  pas interceptées ; les anciens caches sont purgés à chaque changement de
+  version ; la copie de rafraîchissement est toujours revalidée.
 
 Le service worker est exécuté par un test dans un contexte simulé, avec un faux
 cache et un faux réseau : installation, échec d'une ressource distante,
@@ -144,8 +144,20 @@ votre messagerie qui le protège, plus l'application.
 
 Aucun secret, aucune clé, aucune adresse de courriel dans les fichiers publiés.
 Vérifié automatiquement contre les motifs usuels — clés privées, jetons GitHub,
-clés d'API, identifiants AWS. Les commits sont signés d'une adresse fictive
-`diego@local`, jamais d'une adresse réelle.
+clés d'API, identifiants AWS.
+
+**Rectification, novembre 2026.** Ce document affirmait que les commits étaient
+signés d'une adresse fictive. C'est faux pour ce dépôt : les fichiers ont été
+déposés par l'interface web de GitHub, qui signe chaque dépôt de l'adresse de
+courriel du compte. Cette adresse figure donc dans l'historique public. Pour les
+dépôts à venir : GitHub → Settings → Emails → « Keep my email addresses
+private ». L'historique existant, lui, ne change pas sans être réécrit.
+
+**Sauvegarde.** La progression ne vit que dans le stockage du navigateur.
+L'onglet Outils l'écrit dans un fichier ou la transmet par la feuille de partage
+d'Android ; l'application demande aussi au navigateur un stockage durable. Un
+état que l'application ne sait pas relire est mis de côté avant toute
+réécriture.
 
 ---
 
@@ -174,12 +186,9 @@ progression est locale à votre téléphone et n'est jamais servie.
 
 ## Ce qui n'a pas pu être vérifié ici
 
-Le comportement réel d'un navigateur : l'application de la politique de sécurité
-du contenu, l'installation de l'application progressive, le fonctionnement hors
-connexion réel. Les tests utilisent un DOM simulé, qui n'applique pas les
-politiques de sécurité. La logique est éprouvée, son application par Chrome ne
-peut l'être que sur l'appareil.
-
-Contrôle à faire une fois sur le téléphone, après mise en ligne : ouvrir la
-console de Chrome et vérifier qu'aucune violation de politique de sécurité n'est
-signalée. S'il y en avait une, elle nommerait la directive fautive.
+La version 2 a été éprouvée dans un vrai Chromium, en téléphone simulé :
+politique de sécurité appliquée, service worker, fonctionnement hors connexion,
+passage de la version 1 en ligne à la version 2 avec une progression existante.
+Restent hors de portée : l'installation sur un Android réel, la feuille de
+partage, la synthèse vocale et l'octroi du stockage durable, qui dépendent de
+l'appareil.

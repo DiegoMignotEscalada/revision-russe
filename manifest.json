@@ -1,7 +1,7 @@
 {
-  "name": "Révision de russe — bloc 1",
+  "name": "Révision de russe",
   "short_name": "Russe",
-  "description": "Outil personnel de révision des six cas du russe, par répétition espacée.",
+  "description": "Outil personnel de révision du russe, par répétition espacée.",
   "lang": "fr",
   "dir": "ltr",
   "start_url": ".",
